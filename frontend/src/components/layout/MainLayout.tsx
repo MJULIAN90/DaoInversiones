@@ -12,8 +12,10 @@ import {
   Users,
 } from "lucide-react";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
+import { useChainId } from "wagmi";
 import { useProtocolCapabilities } from "@/hooks/useProtocolCapabilities";
 import type { ProtocolCapabilities } from "@/types/capabilities";
+import { getNetworkName } from "@/utils";
 
 const navigation = [
   {
@@ -77,7 +79,10 @@ const navigation = [
 
 export function MainLayout() {
   const location = useLocation();
+  const chainId = useChainId();
   const capabilities = useProtocolCapabilities();
+  const networkName = getNetworkName(chainId);
+  const networkStatus = chainId ? "Connected" : "Disconnected";
 
   const visibleNavigation = navigation.filter((item) => {
     if (!item.capability) {
@@ -116,6 +121,7 @@ export function MainLayout() {
                 <NavLink
                   key={item.href}
                   to={item.href}
+                  end
                   className={({ isActive }) =>
                     [
                       "flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition",
@@ -141,13 +147,13 @@ export function MainLayout() {
                 <div className="mt-3 flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-text-primary">
-                      Ethereum Mainnet
+                      {networkName}
                     </p>
                     <p className="mt-1 text-xs text-text-secondary">
-                      Live protocol environment
+                      Current connected network
                     </p>
                   </div>
-                  <span className="badge-success">Healthy</span>
+                  <span className="badge-success">{networkStatus}</span>
                 </div>
               </div>
             </div>

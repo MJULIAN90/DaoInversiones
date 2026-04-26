@@ -221,6 +221,7 @@ export function useBondingModel(): BondingModel {
         });
       }
 
+      Swal.hideLoading();
       Swal.update({
         title: transactionError.title,
         text: transactionError.message,

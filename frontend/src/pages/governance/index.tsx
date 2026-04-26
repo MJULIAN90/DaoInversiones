@@ -168,53 +168,55 @@ export default function GovernancePage() {
             </div>
           </div>
 
-          <div className="card h-full">
-            <div className="card-header">Create Proposal</div>
+          {user.hasGovernanceTokens ? (
+            <div className="card h-full">
+              <div className="card-header">Create Proposal</div>
 
-            <div className="card-content space-y-4">
-              <p className="text-sm leading-7 text-text-secondary">
-                Submit protocol changes through governed proposals once the
-                minimum voting threshold is met.
-              </p>
+              <div className="card-content space-y-4">
+                <p className="text-sm leading-7 text-text-secondary">
+                  Submit protocol changes through governed proposals once the
+                  minimum voting threshold is met.
+                </p>
 
-              <div className="rounded-2xl border border-blue-200 bg-blue-50 px-4 py-4">
-                <p className="text-sm font-medium text-blue-900">
-                  On-chain Listing Note
-                </p>
-                <p className="mt-1 text-sm leading-6 text-blue-800">
-                  Proposal titles are not stored directly onchain by the current
-                  governor storage view, so the list uses proposal IDs as labels
-                  and estimates deadline dates from block numbers.
-                </p>
+                <div className="rounded-2xl border border-blue-200 bg-blue-50 px-4 py-4">
+                  <p className="text-sm font-medium text-blue-900">
+                    On-chain Listing Note
+                  </p>
+                  <p className="mt-1 text-sm leading-6 text-blue-800">
+                    Proposal titles are not stored directly onchain by the current
+                    governor storage view, so the list uses proposal IDs as labels
+                    and estimates deadline dates from block numbers.
+                  </p>
+                </div>
+
+                <div className="rounded-2xl border border-border bg-gray-50 px-4 py-4">
+                  <p className="text-sm text-text-secondary">
+                    Eligibility Status
+                  </p>
+                  <p className="mt-2 text-sm font-medium text-text-primary">
+                    {user.meetsProposalThreshold
+                      ? "You meet the proposal threshold."
+                      : "You need a minimum voting power to submit proposals."}
+                  </p>
+                  <p className="mt-2 text-sm text-text-secondary">
+                    Current governance token balance: {user.governanceTokenBalance}
+                  </p>
+                </div>
+
+                <Link
+                  to="/governance/create"
+                  className={[
+                    "block w-full rounded-lg px-4 py-2 text-center text-sm font-medium transition",
+                    capabilities.canOpenProposalComposer
+                      ? "bg-primary text-white hover:bg-primary-hover"
+                      : "cursor-not-allowed bg-primary/50 text-white pointer-events-none opacity-50",
+                  ].join(" ")}
+                >
+                  Open Proposal Composer
+                </Link>
               </div>
-
-              <div className="rounded-2xl border border-border bg-gray-50 px-4 py-4">
-                <p className="text-sm text-text-secondary">
-                  Eligibility Status
-                </p>
-                <p className="mt-2 text-sm font-medium text-text-primary">
-                  {user.meetsProposalThreshold
-                    ? "You meet the proposal threshold."
-                    : "You need a minimum voting power to submit proposals."}
-                </p>
-                <p className="mt-2 text-sm text-text-secondary">
-                  Current voting power: {user.votingPower}
-                </p>
-              </div>
-
-              <Link
-                to="/governance/create"
-                className={[
-                  "block w-full rounded-lg px-4 py-2 text-center text-sm font-medium transition",
-                  capabilities.canOpenProposalComposer
-                    ? "bg-primary text-white hover:bg-primary-hover"
-                    : "cursor-not-allowed bg-primary/50 text-white pointer-events-none opacity-50",
-                ].join(" ")}
-              >
-                Open Proposal Composer
-              </Link>
             </div>
-          </div>
+          ) : null}
         </div>
       </section>
     </div>

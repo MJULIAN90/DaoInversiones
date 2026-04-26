@@ -7,7 +7,8 @@ export type ProposalDetailStatus =
   | "Defeated"
   | "Queued"
   | "Executed"
-  | "Canceled";
+  | "Canceled"
+  | "Expired";
 
 export interface ProposalVoteBreakdown {
   forVotes: string;
@@ -33,6 +34,7 @@ export interface ProposalDetailData {
   description: string;
   proposer: string;
   executionEta: string;
+  delegatedVotes: string;
   votes: ProposalVoteBreakdown;
   timeline: ProposalTimelineItem[];
   actions: ProposalDetailAction[];
@@ -41,4 +43,13 @@ export interface ProposalDetailData {
 export interface ProposalDetailModel {
   proposal: ProposalDetailData;
   capabilities: ProtocolCapabilities;
+  canVote: boolean;
+  canQueueProposal: boolean;
+  canExecuteProposal: boolean;
+  voteFor: () => Promise<void>;
+  voteAgainst: () => Promise<void>;
+  abstain: () => Promise<void>;
+  queueProposal: () => Promise<void>;
+  executeProposal: () => Promise<void>;
+  isSubmitting: boolean;
 }

@@ -212,6 +212,7 @@ export function useGuardianVaultToolsModel(): GuardianVaultToolsModel {
     } catch (error) {
       const transactionError = getTransactionError(error);
 
+      Swal.hideLoading();
       Swal.update({
         title: transactionError.title,
         text: transactionError.message,

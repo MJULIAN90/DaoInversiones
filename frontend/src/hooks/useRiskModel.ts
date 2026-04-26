@@ -234,6 +234,7 @@ export function useRiskModel(): RiskModel {
       } catch (error) {
         const transactionError = getTransactionError(error);
 
+        Swal.hideLoading();
         Swal.update({
           title: transactionError.title,
           text: transactionError.message,

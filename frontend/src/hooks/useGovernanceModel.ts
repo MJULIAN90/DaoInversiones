@@ -149,6 +149,24 @@ export function useGovernanceModel(): GovernanceModel {
     },
   });
 
+  const { data: userGovernanceTokenBalanceData } = useReadContracts({
+    allowFailure: true,
+    contracts:
+      governanceTokenConfig && connection.address
+        ? [
+            {
+              abi: governanceTokenConfig.abi,
+              address: governanceTokenConfig.address,
+              functionName: "balanceOf" as const,
+              args: [connection.address],
+            },
+          ]
+        : [],
+    query: {
+      enabled: Boolean(governanceTokenConfig && connection.address),
+    },
+  });
+
   const proposals = useMemo<GovernanceProposalSummary[]>(() => {
     return proposalDetails.map(({ proposalId, actionCount }, index) => {
       const stateIndex = index * 3;
@@ -204,11 +222,15 @@ export function useGovernanceModel(): GovernanceModel {
   };
 
   const votingPower = getReadContractResult<bigint>(userVotingPowerData?.[0]) ?? 0n;
+  const governanceTokenBalance =
+    getReadContractResult<bigint>(userGovernanceTokenBalanceData?.[0]) ?? 0n;
   const thresholdValue = typeof proposalThreshold === "bigint" ? proposalThreshold : 0n;
 
   const user: GovernanceUserState = {
     votingPower: formatTokenAmount(votingPower, "GOV"),
+    governanceTokenBalance: formatTokenAmount(governanceTokenBalance, "GOV"),
     meetsProposalThreshold: votingPower >= thresholdValue && thresholdValue > 0n,
+    hasGovernanceTokens: governanceTokenBalance > 0n,
   };
 
   return {
