@@ -253,6 +253,11 @@ export function useVaultDetailModel(vaultAddress?: string): VaultDetailModel {
   const maxRedeemValue = maxRedeemValueTyped;
   const totalAssetsValue = totalAssetsValueTyped;
   const depositedAssetsValue = depositedAssetsValueTyped;
+  const strategyDeploymentAssets = formatTokenAmount(
+    totalAssetsValue,
+    assetSymbol === "—" ? undefined : assetSymbol,
+    assetDecimals,
+  );
 
   const aaveAdapterAddress = useMemo(
     () =>
@@ -487,6 +492,8 @@ export function useVaultDetailModel(vaultAddress?: string): VaultDetailModel {
     );
   };
 
+  console.log("aaveAdapterAddress :", aaveAdapterAddress);
+  
   const executeStrategy = async (): Promise<boolean> => {
     if (!resolvedVaultAddress || !aaveAdapterAddress) {
       await Swal.fire({
@@ -498,10 +505,33 @@ export function useVaultDetailModel(vaultAddress?: string): VaultDetailModel {
       return false;
     }
 
-    if (maxWithdrawValue <= 0n) {
+    if (!capabilities.canExecuteStrategy || !isVaultGuardian) {
+      await Swal.fire({
+        title: "Guardian access required",
+        text: "Only the guardian assigned to this vault can execute the strategy.",
+        icon: "warning",
+        confirmButtonText: "OK",
+      });
+      return false;
+    }
+
+    if (!vaultDetailTyped?.active || isExecutionPausedTyped) {
+      await Swal.fire({
+        title: "Strategy execution restricted",
+        text: "Execution is currently restricted by vault status or risk controls.",
+        icon: "warning",
+        confirmButtonText: "OK",
+      });
+      return false;
+    }
+
+    // Strategy deployment should use the vault's aggregate balance, not the caller's personal position.
+    const vaultStrategyAssets = totalAssetsValue;
+
+    if (vaultStrategyAssets <= 0n) {
       await Swal.fire({
         title: "No assets available",
-        text: "There are no withdrawable assets available to deploy through the strategy.",
+        text: "There are no vault assets available to deploy through the strategy.",
         icon: "warning",
         confirmButtonText: "OK",
       });
@@ -510,12 +540,12 @@ export function useVaultDetailModel(vaultAddress?: string): VaultDetailModel {
 
     const encodedData = encodeAbiParameters(
       [{ type: "uint8" }, { type: "uint256" }],
-      [0, maxWithdrawValue],
+      [0, vaultStrategyAssets],
     );
 
     return executeVaultTransaction(
       "Execute strategy",
-      "Confirm the guardian strategy execution in your wallet.",
+      `Confirm the guardian strategy execution in your wallet. This will deploy ${strategyDeploymentAssets} from the vault.`,
       async () => {
         const contract = resolveProtocolContract(chainId, "getVaultImplementationContract");
         if (!contract) throw new Error("Vault implementation contract not found");

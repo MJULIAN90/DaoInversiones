@@ -294,13 +294,18 @@ const {
               vault status and risk monitoring.
             </p>
 
+            <SummaryStat
+              label="Planned Strategy Deployment"
+              value={vault.totalAssets}
+            />
+
             <div className="rounded-2xl border border-border bg-gray-50 px-4 py-4">
               <p className="text-sm font-medium text-text-primary">
                 Strategy Execution
               </p>
               <p className="mt-1 text-sm leading-6 text-text-secondary">
                 {controls.strategyExecutionEnabled
-                  ? "Execution is enabled at vault level, but still requires guardian capability from the connected wallet."
+                  ? "Execution is enabled at vault level, and the amount above will be deployed from the vault balance when you proceed."
                   : "Execution is currently restricted by vault status or protocol risk controls."}
               </p>
             </div>
