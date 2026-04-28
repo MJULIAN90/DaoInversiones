@@ -1,7 +1,8 @@
 # Comandos
 
 balance call
-cast call 0x5FbDB2315678afecb367f032d93F642f64180aa3 "balanceOf(address)" 0x70997970C51812dc3A010C7d01b50e0d17dc79C8 --rpc-url http://127.0.0.1:8545
+cast call 0x5FbDB2315678afecb367f032d93F642f64180aa3 "balanceOf(address)" 0x70997970C51812dc3A010C7d01b50e0d17dc79C8 --rpc-url http://127.
+0.0.1:8545
 
 mint send
 cast send 0x5FbDB2315678afecb367f032d93F642f64180aa3 "mint(address,uint256)" "0xdF3e18d64BC6A983f673Ab319CCaE4f1a57C7097" "5000e18" --rpc-url http://127.0.0.1:8545 --private-key c526ee95bf44d8fc405a158bb884d9d1238d99f0612e9f33d006bb0789009aaa
