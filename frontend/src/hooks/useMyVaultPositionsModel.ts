@@ -25,48 +25,48 @@ export function useMyVaultPositionsModel(): MyVaultPositionsModel {
     return resolveOptionalContract(chainId, getVaultRegistryContract);
   }, [chainId]);
 
-  // Get vaults by guardian
-  const { data: vaultsByGuardianData } = useReadContracts({
+  // Get all registered vaults and filter by connected account investment
+  const { data: allVaultsData } = useReadContracts({
     allowFailure: true,
-    contracts: vaultRegistryConfig && connection.address
+    contracts: vaultRegistryConfig
       ? [
           {
             abi: vaultRegistryConfig.abi,
             address: vaultRegistryConfig.address,
-            functionName: "getVaultsByGuardian",
-            args: [connection.address as Address],
+            functionName: "getAllVaults",
           },
         ]
       : [],
     query: {
-      enabled: Boolean(vaultRegistryConfig && connection.address),
+      enabled: Boolean(vaultRegistryConfig),
     },
   });
 
   const vaultAddresses = useMemo(
-    () => getReadContractResult<Address[]>(vaultsByGuardianData?.[0]) ?? [],
-    [vaultsByGuardianData],
+    () => getReadContractResult<Address[]>(allVaultsData?.[0]) ?? [],
+    [allVaultsData],
   );
 
-  // Read balanceOf for each vault
+  // Read balanceOf for each vault for the connected user
   const { data: balanceData } = useReadContracts({
     allowFailure: true,
-    contracts: vaultRegistryConfig && connection.address
-      ? vaultAddresses.map((vaultAddress) => ({
-          abi: [
-            {
-              type: "function",
-              name: "balanceOf",
-              stateMutability: "view",
-              inputs: [{ name: "account", type: "address" }],
-              outputs: [{ name: "", type: "uint256" }],
-            },
-          ],
-          address: vaultAddress,
-          functionName: "balanceOf",
-          args: [connection.address as Address],
-        }))
-      : [],
+    contracts:
+      vaultRegistryConfig && connection.address
+        ? vaultAddresses.map((vaultAddress) => ({
+            abi: [
+              {
+                type: "function",
+                name: "balanceOf",
+                stateMutability: "view",
+                inputs: [{ name: "account", type: "address" }],
+                outputs: [{ name: "", type: "uint256" }],
+              },
+            ],
+            address: vaultAddress,
+            functionName: "balanceOf",
+            args: [connection.address as Address],
+          }))
+        : [],
     query: {
       enabled: Boolean(vaultRegistryConfig && connection.address && vaultAddresses.length > 0),
     },
@@ -137,15 +137,16 @@ export function useMyVaultPositionsModel(): MyVaultPositionsModel {
     );
   }, [assetSymbolsData, vaultDetailsWithAsset]);
 
-  // Get vaults with balance > 0 for previewRedeem
   const vaultsWithBalance = useMemo(() => {
     return vaultAddresses
       .map((vaultAddress, index) => ({
         vaultAddress,
+        index,
         balance: getReadContractResult<bigint>(balanceData?.[index]) ?? 0n,
+        detail: vaultDetails[index],
       }))
       .filter(({ balance }) => balance > 0n);
-  }, [vaultAddresses, balanceData]);
+  }, [vaultAddresses, balanceData, vaultDetails]);
 
   // Read previewRedeem for deposited
   const { data: previewRedeemData } = useReadContracts({
@@ -180,24 +181,27 @@ export function useMyVaultPositionsModel(): MyVaultPositionsModel {
   }, [vaultsWithBalance, previewRedeemData]);
 
   const positions = useMemo<VaultPositionItem[]>(() => {
-    return vaultAddresses.map((vaultAddress, index) => {
-      const balance = getReadContractResult<bigint>(balanceData?.[index]) ?? 0n;
-      const detail = vaultDetails[index];
-      const assetSymbol = assetSymbolsByIndex[index] ?? (detail?.asset ? formatAddress(detail.asset) : "—");
-      const depositedValue = balance > 0n ? (previewRedeemByVault[vaultAddress] ?? 0n) : 0n;
-      const deposited = formatTokenAmount(depositedValue, assetSymbol === "—" ? undefined : assetSymbol);
+    return vaultsWithBalance.map(({ vaultAddress, index, balance, detail }) => {
+      const assetSymbol =
+        assetSymbolsByIndex[index] ??
+        (detail?.asset ? formatAddress(detail.asset) : "—");
+      const depositedValue = previewRedeemByVault[vaultAddress] ?? 0n;
+      const deposited = formatTokenAmount(
+        depositedValue,
+        assetSymbol === "—" ? undefined : assetSymbol,
+      );
       const shares = formatTokenAmount(balance);
-      const value = balance > 0n ? `$${deposited.replace(/,/g, "").replace(/\..*/, "")}.00` : "$0.00";
+      const value = `$${deposited.replace(/,/g, "").replace(/\..*/, "")}.00`;
 
       return {
-        vaultAddress: formatAddress(vaultAddress),
+        vaultAddress,
         asset: assetSymbol,
         deposited,
         shares,
         value,
       };
     });
-  }, [vaultAddresses, balanceData, vaultDetails, assetSymbolsByIndex, previewRedeemByVault]);
+  }, [vaultsWithBalance, assetSymbolsByIndex, previewRedeemByVault]);
 
   const totalDepositedValue = useMemo(() => {
     const total = positions.reduce((sum, pos) => {
