@@ -119,9 +119,23 @@ export function useVaultDetailModel(vaultAddress?: string): VaultDetailModel {
 
   const assetReads = useProtocolReads(assetDefinitions);
 
+  useEffect(() => {
+    if (resolvedVaultAddress && connection.address) {
+      return;
+    }
+
+    setVaultDecimals(undefined);
+    setMintedShares(undefined);
+    setMaxWithdraw(undefined);
+    setMaxRedeem(undefined);
+    setTotalAssets(undefined);
+    setDepositedAssets(undefined);
+  }, [resolvedVaultAddress, connection.address]);
+
   // Fetch vault data using executeRead
   useEffect(() => {
     if (!resolvedVaultAddress || !connection.address) return;
+    let isActive = true;
 
     const fetchVaultData = async () => {
       try {
@@ -129,47 +143,65 @@ export function useVaultDetailModel(vaultAddress?: string): VaultDetailModel {
           functionName: "decimals",
           functionContract: "getVaultImplementationContract",
           args: [],
+          address: resolvedVaultAddress,
         });
+        if (!isActive) return;
         setVaultDecimals(decimals as number);
 
         const shares = await executeRead({
           functionName: "balanceOf",
           functionContract: "getVaultImplementationContract",
           args: [connection.address],
+          address: resolvedVaultAddress,
         });
+        if (!isActive) return;
         setMintedShares(shares as bigint);
 
         const maxW = await executeRead({
           functionName: "maxWithdraw",
           functionContract: "getVaultImplementationContract",
           args: [connection.address],
+          address: resolvedVaultAddress,
         });
+        if (!isActive) return;
         setMaxWithdraw(maxW as bigint);
 
         const maxR = await executeRead({
           functionName: "maxRedeem",
           functionContract: "getVaultImplementationContract",
           args: [connection.address],
+          address: resolvedVaultAddress,
         });
+        if (!isActive) return;
         setMaxRedeem(maxR as bigint);
 
         const totalA = await executeRead({
           functionName: "totalAssets",
           functionContract: "getVaultImplementationContract",
           args: [],
+          address: resolvedVaultAddress,
         });
+        if (!isActive) return;
         setTotalAssets(totalA as bigint);
       } catch (error) {
         console.error("Error fetching vault data:", error);
       }
     };
 
-    fetchVaultData();
+    void fetchVaultData();
+
+    return () => {
+      isActive = false;
+    };
   }, [resolvedVaultAddress, connection.address, executeRead, refreshTrigger]);
 
   // Fetch preview data
   useEffect(() => {
-    if (!resolvedVaultAddress || !mintedShares || mintedShares <= 0n) return;
+    if (!resolvedVaultAddress || !mintedShares || mintedShares <= 0n) {
+      setDepositedAssets(0n);
+      return;
+    }
+    let isActive = true;
 
     const fetchPreviewData = async () => {
       try {
@@ -177,14 +209,20 @@ export function useVaultDetailModel(vaultAddress?: string): VaultDetailModel {
           functionName: "previewRedeem",
           functionContract: "getVaultImplementationContract",
           args: [mintedShares],
+          address: resolvedVaultAddress,
         });
+        if (!isActive) return;
         setDepositedAssets(deposited as bigint);
       } catch (error) {
         console.error("Error fetching preview data:", error);
       }
     };
 
-    fetchPreviewData();
+    void fetchPreviewData();
+
+    return () => {
+      isActive = false;
+    };
   }, [resolvedVaultAddress, mintedShares, executeRead, refreshTrigger]);
 
   const mintedSharesValueTyped = mintedShares ?? 0n;
@@ -216,12 +254,6 @@ export function useVaultDetailModel(vaultAddress?: string): VaultDetailModel {
   const totalAssetsValue = totalAssetsValueTyped;
   const depositedAssetsValue = depositedAssetsValueTyped;
 
-
-
-
-
-
-
   const aaveAdapterAddress = useMemo(
     () =>
       chainId
@@ -230,12 +262,30 @@ export function useVaultDetailModel(vaultAddress?: string): VaultDetailModel {
     [chainId],
   );
 
+  // Explicitly refresh total assets to ensure UI reflects on-chain changes
+  const refreshTotalAssets = async () => {
+    if (!resolvedVaultAddress) return;
+    try {
+      const totalA = await executeRead({
+        functionName: "totalAssets",
+        functionContract: "getVaultImplementationContract",
+        args: [],
+        address: resolvedVaultAddress,
+      });
+      setTotalAssets(totalA as bigint);
+    } catch (error) {
+      console.error("Error refreshing Vault Total Assets:", error);
+    }
+  };
+
   const refreshVaultData = async () => {
     await Promise.allSettled([
       refetchProtocol?.(),
       assetReads.refetch?.(),
-      setRefreshTrigger(prev => prev + 1),
     ]);
+    // Also refresh total assets explicitly to guarantee UI consistency
+    await refreshTotalAssets();
+    setRefreshTrigger(prev => prev + 1);
   };
 
   const approveAssetForVault = async (amount: bigint) => {

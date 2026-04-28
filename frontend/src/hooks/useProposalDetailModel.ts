@@ -157,6 +157,9 @@ export function useProposalDetailModel(
     [chainId, proposalId],
   );
 
+  // Extraer el poder de voto actual del usuario
+  const userVotingPower = getReadContractResult<bigint>(userVotingPowerData?.[0]) ?? 0n;
+
   const proposalTitle = useMemo(() => {
     if (proposalMetadata?.title?.trim()) {
       return proposalMetadata.title.trim();
@@ -189,10 +192,7 @@ export function useProposalDetailModel(
         : proposalDeadline > 0n
           ? `Block ${proposalDeadline.toString()}`
           : "Unavailable",
-    delegatedVotes: formatTokenAmount(
-      getReadContractResult<bigint>(userVotingPowerData?.[0]) ?? 0n,
-      "GOV",
-    ),
+    delegatedVotes: formatTokenAmount(userVotingPower, "GOV"),
     votes: {
       againstVotes: formatTokenAmount(voteBreakdown[0], "GOV"),
       forVotes: formatTokenAmount(voteBreakdown[1], "GOV"),
@@ -241,6 +241,20 @@ export function useProposalDetailModel(
     action: "for" | "against" | "abstain",
   ) => {
     if (!canVote) {
+      return;
+    }
+
+    // Validar que el usuario tenga poder de voto antes de permitir votar
+    if (userVotingPower === 0n) {
+      await Swal.fire({
+        title: "No voting power",
+        html: `<p>You don't have any voting power available to vote on this proposal.</p>
+               <p style="margin-top: 10px; font-size: 0.9em;">
+                 To participate in governance, you need to hold or be delegated governance tokens (GOV).
+               </p>`,
+        icon: "info",
+        confirmButtonText: "OK",
+      });
       return;
     }
 
@@ -351,10 +365,37 @@ export function useProposalDetailModel(
     } catch (error) {
       const transactionError = getTransactionError(error);
 
+      // Agregar contexto específico para errores de votación
+      let finalMessage = transactionError.message;
+      if (
+        action !== "execute" &&
+        action !== "queue" &&
+        transactionError.code === "contract_revert"
+      ) {
+        // Para votaciones, agregar contexto adicional
+        const errorLower = String(error).toLowerCase();
+        if (
+          errorLower.includes("already voted") ||
+          errorLower.includes("votealreadycast")
+        ) {
+          finalMessage =
+            "You have already voted on this proposal. Each address can only vote once per proposal.";
+        } else if (errorLower.includes("voting is closed")) {
+          finalMessage =
+            "The voting period for this proposal has ended. Check the deadline in the proposal details.";
+        } else if (
+          errorLower.includes("no voting power") ||
+          errorLower.includes("insufficient")
+        ) {
+          finalMessage =
+            "You don't have enough voting power. Make sure your governance tokens are delegated.";
+        }
+      }
+
       Swal.hideLoading();
       Swal.update({
         title: transactionError.title,
-        text: transactionError.message,
+        text: finalMessage,
         icon: "error",
         showConfirmButton: true,
         confirmButtonText: "OK",
