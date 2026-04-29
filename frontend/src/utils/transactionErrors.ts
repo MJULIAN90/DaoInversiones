@@ -1,5 +1,4 @@
 import { BaseError } from "viem";
-import { findContractError } from "./contractErrorMap";
 
 export type TransactionErrorCode =
   | "user_rejected"
@@ -105,8 +104,6 @@ function matchProtocolRevert(rawMessages: string[]): TransactionErrorDisplay | u
       hasAnyPattern(message, [
         "erc20insufficientallowance",
         "insufficient allowance",
-        "erc20: transfer amount exceeds allowance",
-        "transfer amount exceeds allowance",
       ]),
     )
   ) {
@@ -122,8 +119,6 @@ function matchProtocolRevert(rawMessages: string[]): TransactionErrorDisplay | u
       hasAnyPattern(message, [
         "erc20insufficientbalance",
         "guardianbondescrow__insufficientbond",
-        "erc20: transfer amount exceeds balance",
-        "transfer amount exceeds balance",
       ]),
     )
   ) {
@@ -217,7 +212,6 @@ export function getTransactionError(error: unknown): TransactionErrorDisplay {
         "exceeds balance",
         "exceeds the balance",
         "funds for gas",
-        "gas required exceeds allowance",
       ]),
     )
   ) {

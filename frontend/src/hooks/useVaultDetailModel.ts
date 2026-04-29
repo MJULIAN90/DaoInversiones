@@ -1,13 +1,12 @@
-import { addresses } from "@dao/contracts-sdk";
 import { useEffect, useMemo, useState } from "react";
-import { useChainId, useConnection } from "wagmi";
-import { encodeAbiParameters } from "viem";
+import { useChainId, useConnection, useReadContracts } from "wagmi";
 import type { Address } from "viem";
 import type {
   VaultDetailControls,
   VaultDetailData,
   VaultDetailModel,
   VaultDetailPosition,
+  VaultStrategyAllocationInput,
 } from "@/types/models/vaultDetail";
 import { useProtocolCapabilities } from "./useProtocolCapabilities";
 import Swal from "sweetalert2";
@@ -26,6 +25,7 @@ import useWriteContracts from "./useWriteContracts";
 import { useProtocolReads } from "./useProtocolReads";
 import type { ProtocolReadDefinition } from "./useProtocolReads";
 import useProtocolReadExecutor from "./useProtocolReadExecutor";
+import { getReadContractResult } from "./shared/contractResults";
 import { resolveProtocolContract } from "./protocolContracts";
 
 type VaultDetailProtocolContext = {
@@ -55,7 +55,10 @@ const vaultDetailProtocolDefinitions: ProtocolReadDefinition<
   },
 ];
 
-export function useVaultDetailModel(vaultAddress?: string): VaultDetailModel {
+export function useVaultDetailModel(
+  vaultAddress?: string,
+  strategyAllocations: VaultStrategyAllocationInput[] = [],
+): VaultDetailModel {
   const chainId = useChainId();
   const capabilities = useProtocolCapabilities();
   const connection = useConnection();
@@ -118,6 +121,177 @@ export function useVaultDetailModel(vaultAddress?: string): VaultDetailModel {
   ] : [];
 
   const assetReads = useProtocolReads(assetDefinitions);
+
+  const strategyRouterConfig = useMemo(
+    () => resolveProtocolContract(chainId, "getStrategyRouterContract"),
+    [chainId],
+  );
+
+  const { data: strategyRouterAdaptersData } = useReadContracts({
+    allowFailure: true,
+    contracts:
+      strategyRouterConfig && resolvedVaultAddress
+        ? [
+            {
+              abi: strategyRouterConfig.abi,
+              address: strategyRouterConfig.address,
+              functionName: "getAllowedAdapters" as const,
+            },
+          ]
+        : [],
+    query: {
+      enabled: Boolean(strategyRouterConfig && resolvedVaultAddress),
+    },
+  });
+
+  const strategyRouterAdapters = useMemo(() => {
+    return (
+      (getReadContractResult<readonly Address[] | Address[]>(
+        strategyRouterAdaptersData?.[0],
+      ) ?? []) as Address[]
+    ).map((adapter) => adapter.toLowerCase());
+  }, [strategyRouterAdaptersData]);
+
+  const strategyAllocationReadContracts = useMemo(() => {
+    if (!strategyRouterConfig) {
+      return [];
+    }
+
+    return strategyAllocations.flatMap((allocation) =>
+      isValidAddress(allocation.adapter.trim())
+        ? [
+            {
+              abi: strategyRouterConfig.abi,
+              address: strategyRouterConfig.address,
+              functionName: "isAdapterAllowed" as const,
+              args: [allocation.adapter.trim() as Address],
+            },
+          ]
+        : [],
+    );
+  }, [strategyAllocations, strategyRouterConfig]);
+
+  const { data: strategyAllocationAllowedData } = useReadContracts({
+    allowFailure: true,
+    contracts: strategyAllocationReadContracts,
+    query: {
+      enabled: strategyAllocationReadContracts.length > 0,
+    },
+  });
+
+  const strategyAllocationAdapterCounts = useMemo(() => {
+    const counts = new Map<string, number>();
+
+    for (const allocation of strategyAllocations) {
+      const adapter = allocation.adapter.trim().toLowerCase();
+      if (!adapter || !isValidAddress(adapter)) {
+        continue;
+      }
+
+      counts.set(adapter, (counts.get(adapter) ?? 0) + 1);
+    }
+
+    return counts;
+  }, [strategyAllocations]);
+
+  const strategyAllocationStatuses = useMemo(() => {
+    let readIndex = 0;
+
+    return strategyAllocations.map((allocation) => {
+      const adapter = allocation.adapter.trim();
+      const normalizedAdapter = adapter.toLowerCase();
+      const percentage = allocation.percentage.trim();
+      const isAdapterValid = adapter !== "" && isValidAddress(adapter);
+      const isDuplicateAdapter =
+        isAdapterValid &&
+        (strategyAllocationAdapterCounts.get(normalizedAdapter) ?? 0) > 1;
+      const percentageValue = Number(percentage);
+      const hasPercentage = percentage !== "";
+      const isPercentageValid =
+        hasPercentage &&
+        Number.isInteger(percentageValue) &&
+        percentageValue > 0;
+      const readResult = isAdapterValid
+        ? strategyAllocationAllowedData?.[readIndex++]
+        : undefined;
+      const isQueryLoaded = isAdapterValid ? readResult !== undefined : false;
+      const isAdapterAllowed = isAdapterValid
+        ? getReadContractResult<boolean>(readResult) ?? false
+        : false;
+      const isValidationPending =
+        isAdapterValid && isPercentageValid && !isQueryLoaded;
+      const isComplete =
+        isAdapterValid &&
+        isPercentageValid &&
+        !isDuplicateAdapter &&
+        isQueryLoaded &&
+        isAdapterAllowed;
+
+      let error: string | undefined;
+
+      if (adapter === "" && percentage === "") {
+        error = "Add an adapter address and its percentage.";
+      } else if (!isAdapterValid) {
+        error = "Enter a valid adapter address.";
+      } else if (isDuplicateAdapter) {
+        error = "Duplicate adapters are not allowed.";
+      } else if (!isPercentageValid) {
+        error = "Enter a percentage greater than 0.";
+      } else if (isValidationPending) {
+        error = "Validating adapter in StrategyRouter...";
+      } else if (isQueryLoaded && !isAdapterAllowed) {
+        error = "Adapter is not enabled in StrategyRouter.";
+      }
+
+      return {
+        adapter,
+        percentage,
+        isAdapterValid,
+        isAdapterAllowed,
+        isQueryLoaded,
+        isComplete,
+        isValidationPending,
+        error,
+      };
+    });
+  }, [strategyAllocations, strategyAllocationAllowedData, strategyAllocationAdapterCounts]);
+
+  const strategyAllocationTotal = useMemo(
+    () =>
+      strategyAllocationStatuses.reduce((total, row) => {
+        const value = Number(row.percentage);
+        return Number.isFinite(value) && value > 0 ? total + value : total;
+      }, 0),
+    [strategyAllocationStatuses],
+  );
+
+  const strategyExecutionMessage = useMemo(() => {
+    if (strategyAllocationStatuses.length === 0) {
+      return "Add at least one adapter allocation to execute the strategy.";
+    }
+
+    const incompleteRow = strategyAllocationStatuses.find(
+      (row) => !row.isComplete,
+    );
+    if (incompleteRow?.error) {
+      return incompleteRow.error;
+    }
+
+    if (strategyAllocationTotal > 100) {
+      return "The total allocation cannot exceed 100%.";
+    }
+
+    if (strategyAllocationTotal < 100) {
+      return "The total allocation must equal 100% before execution.";
+    }
+
+    return undefined;
+  }, [strategyAllocationStatuses, strategyAllocationTotal]);
+
+  const strategyExecutionReady =
+    strategyAllocationStatuses.length > 0 &&
+    strategyAllocationStatuses.every((row) => row.isComplete) &&
+    strategyAllocationTotal === 100;
 
   useEffect(() => {
     if (resolvedVaultAddress && connection.address) {
@@ -253,19 +427,6 @@ export function useVaultDetailModel(vaultAddress?: string): VaultDetailModel {
   const maxRedeemValue = maxRedeemValueTyped;
   const totalAssetsValue = totalAssetsValueTyped;
   const depositedAssetsValue = depositedAssetsValueTyped;
-  const strategyDeploymentAssets = formatTokenAmount(
-    totalAssetsValue,
-    assetSymbol === "—" ? undefined : assetSymbol,
-    assetDecimals,
-  );
-
-  const aaveAdapterAddress = useMemo(
-    () =>
-      chainId
-        ? addresses[chainId as keyof typeof addresses]?.aaveV3Adapter
-        : undefined,
-    [chainId],
-  );
 
   // Explicitly refresh total assets to ensure UI reflects on-chain changes
   const refreshTotalAssets = async () => {
@@ -492,13 +653,11 @@ export function useVaultDetailModel(vaultAddress?: string): VaultDetailModel {
     );
   };
 
-  console.log("aaveAdapterAddress :", aaveAdapterAddress);
-  
   const executeStrategy = async (): Promise<boolean> => {
-    if (!resolvedVaultAddress || !aaveAdapterAddress) {
+    if (!resolvedVaultAddress || !strategyRouterConfig) {
       await Swal.fire({
         title: "Strategy execution unavailable",
-        text: "No strategy adapter is configured for this network.",
+        text: "The StrategyRouter contract is unavailable for this network.",
         icon: "warning",
         confirmButtonText: "OK",
       });
@@ -525,36 +684,40 @@ export function useVaultDetailModel(vaultAddress?: string): VaultDetailModel {
       return false;
     }
 
-    // Strategy deployment should use the vault's aggregate balance, not the caller's personal position.
-    const vaultStrategyAssets = totalAssetsValue;
-
-    if (vaultStrategyAssets <= 0n) {
+    if (!strategyExecutionReady) {
       await Swal.fire({
-        title: "No assets available",
-        text: "There are no vault assets available to deploy through the strategy.",
+        title: "Strategy allocation incomplete",
+        text:
+          strategyExecutionMessage ??
+          "Fill all adapter rows and make sure the allocation totals 100%.",
         icon: "warning",
         confirmButtonText: "OK",
       });
       return false;
     }
 
-    const encodedData = encodeAbiParameters(
-      [{ type: "uint8" }, { type: "uint256" }],
-      [0, vaultStrategyAssets],
+    const adapters = strategyAllocationStatuses.map(
+      (allocation) => allocation.adapter.trim() as Address,
+    );
+    const percentages = strategyAllocationStatuses.map((allocation) =>
+      BigInt(allocation.percentage.trim()),
     );
 
     return executeVaultTransaction(
       "Execute strategy",
-      `Confirm the guardian strategy execution in your wallet. This will deploy ${strategyDeploymentAssets} from the vault.`,
+      "Confirm the guardian strategy execution in your wallet. The vault allocation will be routed across the selected adapters.",
       async () => {
-        const contract = resolveProtocolContract(chainId, "getVaultImplementationContract");
+        const contract = resolveProtocolContract(
+          chainId,
+          "getVaultImplementationContract",
+        );
         if (!contract) throw new Error("Vault implementation contract not found");
 
         return executeWrite({
           abi: contract.abi,
           address: resolvedVaultAddress,
           functionName: "executeStrategy",
-          args: [aaveAdapterAddress, encodedData],
+          args: [adapters, percentages],
           options: { waitForReceipt: true },
         });
       },
@@ -628,6 +791,10 @@ export function useVaultDetailModel(vaultAddress?: string): VaultDetailModel {
     vault,
     position,
     controls,
+    strategyRouterAdapters,
+    strategyAllocationStatuses,
+    strategyExecutionMessage,
+    strategyExecutionReady,
     capabilities,
     isSubmitting,
     depositAssetBalance,

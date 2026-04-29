@@ -33,12 +33,13 @@ contract DeployInvestmentDao is Script {
     // Deploy mocks for anvil network
     if (block.chainid == 31337) { // Anvil chain ID
       DeployMocks deployMocks = new DeployMocks();
-      (address mockERC20, address mockAavePool) = deployMocks.run();
+      (address mockERC20, address mockAavePool, address mockV3Aggregator) = deployMocks.run();
 
       // Update network config with deployed mock addresses
       networkConfig.allowedGenesisTokens[0] = mockERC20;
       networkConfig.allowedVaultToken = mockERC20;
       networkConfig.aavePool = mockAavePool;
+      networkConfig.mockV3Aggregator = mockV3Aggregator;
     }
 
     (
@@ -213,7 +214,7 @@ contract DeployInvestmentDao is Script {
     console.log("AaveV3Adapter: ", aaveV3Adapter);
     console.log("================MOCK====================");
     if (block.chainid == 31337) {
-      console.log("MockERC20: ", networkConfig.allowedGenesisTokens[0]);
+      console.log("USDTGenesis: ", networkConfig.allowedGenesisTokens[0]);
       console.log("MockAavePool: ", networkConfig.aavePool);
     }
     console.log("========================================");

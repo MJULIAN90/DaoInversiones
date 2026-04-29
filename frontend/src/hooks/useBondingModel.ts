@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { isAddress, type Address } from "viem";
-import { useChainId, useConnection, useReadContracts } from "wagmi";
+import { useChainId, useConnection } from "wagmi";
 import Swal from "sweetalert2";
 import { getGenesisBondingContract } from "@dao/contracts-sdk";
 
@@ -21,7 +21,6 @@ import {
   getContractNameByNetwork,
   getTransactionError,
 } from "@/utils";
-import { getReadContractResult } from "./shared/contractResults";
 import useWriteContracts from "./useWriteContracts";
 import { useProtocolReads } from "./useProtocolReads";
 import { useProtocolCapabilities } from "./useProtocolCapabilities";
@@ -54,29 +53,13 @@ export function useBondingModel(): BondingModel {
     governanceTokenWalletBalance,
     refetch,
   } = useProtocolReads(bondingProtocolReadDefinitions, bondingReadContext);
-// Removed debug log: assetsSupported (kept for development if needed)
+console.log("===============", assetsSupported);
 
   const [selectedAssetAddress, setSelectedAssetAddress] =
     useState<Address | null>(null);
   const [amount, setAmount] = useState("");
   const [sweepToken, setSweepToken] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  // Obtener el saldo del token seleccionado para validar antes de comprar
-  const { data: selectedAssetBalanceData } = useReadContracts({
-    allowFailure: true,
-    contracts:
-      selectedAssetAddress && connection.address
-        ? [
-            {
-              abi: abiERC20,
-              address: selectedAssetAddress,
-              functionName: "balanceOf" as const,
-              args: [connection.address],
-            },
-          ]
-        : [],
-  });
   const isAmountValid =
     amount.trim() !== "" &&
     Number.isFinite(Number(amount)) &&
@@ -187,29 +170,6 @@ export function useBondingModel(): BondingModel {
         text: "Invalid amount",
         icon: "error",
         confirmButtonText: "Cool",
-      });
-      return;
-    }
-
-    // Validar saldo del token seleccionado ANTES de proceder
-    const selectedAssetBalance = getReadContractResult<bigint>(
-      selectedAssetBalanceData?.[0],
-    ) ?? 0n;
-
-    if (selectedAssetBalance < parsedAmount) {
-      const availableAmount = formatTokenAmount(selectedAssetBalance);
-      const requiredAmount = formatTokenAmount(parsedAmount);
-      const tokenSymbol = selectedAsset.symbol;
-
-      Swal.fire({
-        title: "Insufficient balance",
-        html: `<p>You don't have enough <strong>${tokenSymbol}</strong> to complete this purchase.</p>
-               <p style="margin-top: 10px; font-size: 0.9em;">
-                 <strong>Available:</strong> ${availableAmount} ${tokenSymbol}<br>
-                 <strong>Required:</strong> ${requiredAmount} ${tokenSymbol}
-               </p>`,
-        icon: "warning",
-        confirmButtonText: "OK",
       });
       return;
     }
