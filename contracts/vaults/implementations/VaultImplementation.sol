@@ -14,6 +14,7 @@ import {IProtocolCore} from "../../interfaces/core/IProtocolCore.sol";
 import {IStrategyRouter} from "../../interfaces/execution/IStrategyRouter.sol";
 import {IVaultStrategyExecutor} from "../../interfaces/vaults/IVaultStrategyExecutor.sol";
 import {CommonErrors} from "../../libraries/errors/CommonErrors.sol";
+import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
 contract VaultImplementation is
   Initializable,
@@ -25,6 +26,18 @@ contract VaultImplementation is
   IVaultStrategyExecutor
 {
   using SafeERC20 for IERC20;
+  using EnumerableSet for EnumerableSet.AddressSet;
+
+  enum AdapterStatus {
+    None,
+    Active,
+    Retired
+  }
+
+  struct AdapterAllocation {
+    uint256 percentage;
+    AdapterStatus status;
+  }
 
   bytes32 public constant GUARDIAN_ROLE = keccak256("GUARDIAN_ROLE");
   bytes32 public constant STRATEGY_EXECUTOR_ROLE = keccak256("STRATEGY_EXECUTOR_ROLE");
@@ -33,6 +46,9 @@ contract VaultImplementation is
   address public factory;
   address public router;
   address public core;
+
+  EnumerableSet.AddressSet private _vaultActiveAdapters;
+  mapping(address adapter => AdapterAllocation) public listAdapters;
 
   event VaultInitialized(
     address indexed asset,
@@ -66,6 +82,8 @@ contract VaultImplementation is
   error VaultImplementation__NotRouter();
   error VaultImplementation__ExternalCallFailed();
   error VaultImplementation__InvalidStrategyAllocation();
+  error VaultImplementation__duplicatedAdapter();
+  error VaultImplementation__InvalidPercentage();
 
   constructor() {
     _disableInitializers();
@@ -201,24 +219,67 @@ contract VaultImplementation is
   }
 
   function executeStrategy(
-    address[] calldata adapters,
-    uint256[] calldata percentages
+    address[] calldata newAdapters,
+    uint256[] calldata newPercentages,
+    uint8 action
   ) external onlyRole(GUARDIAN_ROLE) whenNotPaused {
-    if(adapters.length == 0 || adapters.length != percentages.length)
+    uint256 adaptersLength = newAdapters.length;
+
+    if(adaptersLength == 0 || adaptersLength != newPercentages.length)
       revert VaultImplementation__InvalidStrategyAllocation();
 
-    for(uint256 i = 0; i < adapters.length; i++) {
-      if(adapters[i] == address(0))
-        revert CommonErrors.ZeroAddress();
+    uint256 vaultActiveAdaptersLength = _vaultActiveAdapters.length();
+
+    if(vaultActiveAdaptersLength > 0) {
+
+      for(uint256 i = 0; i < vaultActiveAdaptersLength; i++) {
+        address activeAdapter = _vaultActiveAdapters.at(i);
+        listAdapters[activeAdapter].status = AdapterStatus.Retired;
+
+        _vaultActiveAdapters.remove(activeAdapter);
+      }
     }
 
-    emit StrategyExecutionRequest(msg.sender, adapters, percentages);
+    uint256 totalPercentage = 0;
+
+    for(uint256 i = 0; i < adaptersLength; i++) {
+      address adapter = newAdapters[i];
+      uint256 percentage = newPercentages[i];
+
+      if(adapter == address(0) || percentage == 0)
+        revert VaultImplementation__InvalidStrategyAllocation();
+
+      listAdapters[adapter] = AdapterAllocation({
+        percentage: percentage,
+        status: AdapterStatus.Active
+      });
+
+      if(_vaultActiveAdapters.contains(adapter))
+        revert VaultImplementation__duplicatedAdapter();
+
+      _vaultActiveAdapters.add(adapter);
+
+      totalPercentage += newPercentages[i];
+    }
+
+    if(totalPercentage != 100)
+      revert VaultImplementation__InvalidPercentage();
+
+    emit StrategyExecutionRequest(msg.sender, newAdapters, newPercentages);
+
+    uint256 totalAssets = totalAssets();
+    uint256[] memory amountsToInvest = new uint256[](adaptersLength);
+
+    for(uint256 i = 0; i < adaptersLength; i++) {
+      amountsToInvest[i] = (totalAssets * newPercentages[i]) / 100;
+    }
 
     IStrategyRouter(router).executeMultiple(
       address(this),
       asset(),
-      adapters,
-      percentages
+      newAdapters,
+      amountsToInvest,
+      action
     );
   }
 
