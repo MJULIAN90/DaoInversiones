@@ -176,10 +176,6 @@ export function useBondingModel(): BondingModel {
       enabled: Boolean(selectedAsset && connection.address),
     },
   });
-  console.log("'selectedAsset':", selectedAsset);
-  
-  console.log("selectedAssetBalanceData:", selectedAssetBalanceData);
-  
 
   const selectedAssetBalanceValue =
     getReadContractResult<bigint>(selectedAssetBalanceData?.[0]);
