@@ -446,6 +446,8 @@ export function useVaultDetailModel(
   const maxRedeemValueTyped = maxRedeem ?? 0n;
   const totalAssetsValueTyped = totalAssets ?? 0n;
   const depositedAssetsValueTyped = depositedAssets ?? 0n;
+  const hasWithdrawableAssets = maxWithdrawValueTyped > 0n;
+  const hasRedeemableShares = maxRedeemValueTyped > 0n;
 
   // Assign to old variable names for compatibility
   const assetSymbol = assetSymbolTyped ?? (vaultDetailTyped?.asset ? formatAddress(vaultDetailTyped.asset) : "—");
@@ -837,6 +839,8 @@ export function useVaultDetailModel(
     isSubmitting,
     depositAssetBalance,
     hasDepositAssetBalance,
+    hasWithdrawableAssets,
+    hasRedeemableShares,
     isVaultGuardian,
     canShowGuardianOperations,
     deposit,

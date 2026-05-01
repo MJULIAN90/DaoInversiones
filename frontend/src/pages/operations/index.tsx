@@ -328,11 +328,9 @@ export default function OperationsPage() {
               !capabilities.canCreateProposal ||
               !wiringForm.canSubmitAdapterStrategy
             }
-            error={
-              wiringForm.adapterStrategyError ??
-              wiringForm.wiringPermissionMessage ??
-              wiringForm.adapterStrategyStatusMessage
-            }
+            error={wiringForm.wiringPermissionMessage}
+            statusMessage={wiringForm.adapterStrategyStatusMessage}
+            statusTone={wiringForm.adapterStrategyStatusTone}
             onAction={actions.setAdapterStrategy}
           />
           <WiringCard

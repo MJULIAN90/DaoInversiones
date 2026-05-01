@@ -54,6 +54,8 @@ export interface VaultDetailModel {
   isSubmitting: boolean;
   depositAssetBalance: string;
   hasDepositAssetBalance: boolean;
+  hasWithdrawableAssets: boolean;
+  hasRedeemableShares: boolean;
   isVaultGuardian: boolean;
   canShowGuardianOperations: boolean;
   deposit: (amount: string) => Promise<boolean>;

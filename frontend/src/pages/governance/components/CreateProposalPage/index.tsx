@@ -18,6 +18,7 @@ export default function CreateProposalPage() {
     delegateAddress,
     setDelegateAddress,
     delegateAddressError,
+    delegateStatusMessage,
     canDelegateVotes,
     isDelegatingVotes,
     delegateVotes,
@@ -244,6 +245,13 @@ export default function CreateProposalPage() {
                   <p className="mt-2 text-sm text-danger">
                     {delegateAddressError}
                   </p>
+                ) : null}
+                {delegateStatusMessage ? (
+                  <div className="mt-3 rounded-2xl border border-green-200 bg-green-50 px-4 py-3">
+                    <p className="text-sm font-medium text-green-800">
+                      {delegateStatusMessage}
+                    </p>
+                  </div>
                 ) : null}
               </div>
 

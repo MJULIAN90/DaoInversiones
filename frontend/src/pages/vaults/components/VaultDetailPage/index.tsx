@@ -51,6 +51,8 @@ export default function VaultDetailPage() {
     strategyExecutionReady,
     depositAssetBalance,
     hasDepositAssetBalance,
+    hasWithdrawableAssets,
+    hasRedeemableShares,
     canShowGuardianOperations,
     deposit,
     mint,
@@ -78,8 +80,8 @@ export default function VaultDetailPage() {
     isPositiveNumber(depositAmount) &&
     hasDepositAssetBalance;
   const canMint = controls.depositsEnabled && isPositiveNumber(mintSharesAmount);
-  const canWithdraw = isPositiveNumber(withdrawAmount);
-  const canRedeem = isPositiveNumber(redeemSharesAmount);
+  const canWithdraw = isPositiveNumber(withdrawAmount) && hasWithdrawableAssets;
+  const canRedeem = isPositiveNumber(redeemSharesAmount) && hasRedeemableShares;
   const depositAmountError =
     depositAmount.trim() !== "" && !isPositiveNumber(depositAmount)
       ? `Enter a valid ${vault.asset} amount greater than 0.`
@@ -93,10 +95,14 @@ export default function VaultDetailPage() {
   const withdrawAmountError =
     withdrawAmount.trim() !== "" && !isPositiveNumber(withdrawAmount)
       ? `Enter a valid ${vault.asset} amount greater than 0.`
+      : withdrawAmount.trim() !== "" && !hasWithdrawableAssets
+      ? "No withdrawable assets are available right now."
       : undefined;
   const redeemSharesAmountError =
     redeemSharesAmount.trim() !== "" && !isPositiveNumber(redeemSharesAmount)
       ? "Enter a valid share amount greater than 0."
+      : redeemSharesAmount.trim() !== "" && !hasRedeemableShares
+      ? "No redeemable shares are available right now."
       : undefined;
   const strategyAllocationTotal = useMemo(
     () =>
@@ -307,10 +313,6 @@ export default function VaultDetailPage() {
               error={depositAmountError}
               inputMode="decimal"
             />
-            <div className="flex items-center justify-between text-sm text-text-secondary">
-              <span>Your balance</span>
-              <span>{depositAssetBalance}</span>
-            </div>
             <button
               className="btn-primary w-full disabled:cursor-not-allowed disabled:opacity-50"
               disabled={!canDeposit || isSubmitting}
@@ -334,7 +336,17 @@ export default function VaultDetailPage() {
             >
               Mint Shares
             </button>
-            {/* TODO: deshabilitar además por wallet/session si aplica */}
+            <div className="rounded-2xl border border-border bg-gray-50 px-4 py-4">
+              <p className="text-xs font-medium uppercase tracking-[0.16em] text-text-secondary">
+                Your balance
+              </p>
+              <p className="mt-2 text-sm font-semibold text-text-primary">
+                {depositAssetBalance}
+              </p>
+              <p className="mt-1 text-sm leading-6 text-text-secondary">
+                Available to deposit into this vault.
+              </p>
+            </div>
           </div>
         </div>
 
@@ -350,10 +362,6 @@ export default function VaultDetailPage() {
               error={withdrawAmountError}
               inputMode="decimal"
             />
-            <div className="flex items-center justify-between text-sm text-text-secondary">
-              <span>Your balance</span>
-              <span>{depositAssetBalance}</span>
-            </div>
             <button
               className="btn-primary w-full disabled:cursor-not-allowed disabled:opacity-50"
               disabled={!canWithdraw || isSubmitting}
@@ -370,6 +378,63 @@ export default function VaultDetailPage() {
               error={redeemSharesAmountError}
               inputMode="decimal"
             />
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="rounded-2xl border border-border bg-gray-50 px-4 py-4">
+                <p className="text-xs font-medium uppercase tracking-[0.16em] text-text-secondary">
+                  Withdrawable assets
+                </p>
+                <p className="mt-2 text-sm font-semibold text-text-primary">
+                  {position.withdrawableAssets}
+                </p>
+              </div>
+              <div
+                className={`rounded-2xl border px-4 py-4 ${
+                  hasRedeemableShares
+                    ? "border-green-200 bg-green-50"
+                    : "border-yellow-200 bg-yellow-50"
+                }`}
+              >
+                <p
+                  className={`text-xs font-medium uppercase tracking-[0.16em] ${
+                    hasRedeemableShares ? "text-green-800" : "text-yellow-800"
+                  }`}
+                >
+                  Redeemable now
+                </p>
+                <p
+                  className={`mt-2 text-sm font-semibold ${
+                    hasRedeemableShares ? "text-green-700" : "text-yellow-700"
+                  }`}
+                >
+                  {position.redeemableShares}
+                </p>
+              </div>
+            </div>
+            <div
+              className={`rounded-2xl border px-4 py-4 ${
+                hasRedeemableShares
+                  ? "border-green-200 bg-green-50"
+                  : "border-yellow-200 bg-yellow-50"
+              }`}
+            >
+              <p
+                className={`text-sm font-medium ${
+                  hasRedeemableShares ? "text-green-800" : "text-yellow-800"
+                }`}
+              >
+                {hasRedeemableShares
+                  ? "Redeem is available for this wallet."
+                  : "No redeemable shares are available right now."}
+              </p>
+              <p
+                className={`mt-1 text-sm leading-6 ${
+                  hasRedeemableShares ? "text-green-700" : "text-yellow-700"
+                }`}
+              >
+                You can redeem up to {position.redeemableShares} shares from this
+                vault when the asset and vault conditions allow it.
+              </p>
+            </div>
             <button
               className="btn-secondary w-full disabled:cursor-not-allowed disabled:opacity-50"
               disabled={!canRedeem || isSubmitting}
