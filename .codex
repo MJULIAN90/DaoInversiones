@@ -72,19 +72,6 @@
 - Hooks importantes: `useProtocolReads`, `useWriteContracts`, `useProtocolCapabilities`, `useProposalComposerModel`.
 - Las direcciones y ABIs viven en `frontend/src/constants/` y se alimentan desde `contracts-sdk`.
 
-## Solidity standards
-
-- Use checks-effects-interactions.
-- Validate zero address.
-- Emit events on state changes.
-- Use AccessControl roles consistently.
-- Avoid unbounded loops in state-changing functions.
-- Do not use tx.origin.
-- Do not introduce upgradeability storage layout risks.
-- Preserve existing storage order.
-- Prefer pull over push payments.
-- Actúa como senior Solidity/Web3 engineer. Antes de cambiar código, identifica la arquitectura actual. No cambies interfaces públicas, storage layout, roles, eventos ni scripts de deploy sin avisar. Prioriza seguridad, gas efficiency y tests. Haz cambios pequeños y explícame el diff.
-
 ## Archivos De Referencia
 
 - `README.md`

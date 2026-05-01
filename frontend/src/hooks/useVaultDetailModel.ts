@@ -94,6 +94,22 @@ export function useVaultDetailModel(
   const [depositedAssets, setDepositedAssets] = useState<bigint | undefined>();
   const [refreshTrigger, setRefreshTrigger] = useState(0);
 
+  const toBigIntValue = (value: unknown): bigint => {
+    if (typeof value === "bigint") {
+      return value;
+    }
+
+    if (typeof value === "number" && Number.isFinite(value)) {
+      return BigInt(Math.trunc(value));
+    }
+
+    if (typeof value === "string" && value.trim() !== "") {
+      return BigInt(value);
+    }
+
+    return 0n;
+  };
+
   const resolvedVaultAddress = useMemo(
     () =>
       vaultAddress && isValidAddress(vaultAddress)
@@ -340,7 +356,7 @@ export function useVaultDetailModel(
           address: resolvedVaultAddress,
         });
         if (!isActive) return;
-        setVaultDecimals(decimals as number);
+        setVaultDecimals(Number(toBigIntValue(decimals)));
 
         const shares = await executeRead({
           functionName: "balanceOf",
@@ -349,7 +365,7 @@ export function useVaultDetailModel(
           address: resolvedVaultAddress,
         });
         if (!isActive) return;
-        setMintedShares(shares as bigint);
+        setMintedShares(toBigIntValue(shares));
 
         const maxW = await executeRead({
           functionName: "maxWithdraw",
@@ -358,7 +374,7 @@ export function useVaultDetailModel(
           address: resolvedVaultAddress,
         });
         if (!isActive) return;
-        setMaxWithdraw(maxW as bigint);
+        setMaxWithdraw(toBigIntValue(maxW));
 
         const maxR = await executeRead({
           functionName: "maxRedeem",
@@ -367,7 +383,7 @@ export function useVaultDetailModel(
           address: resolvedVaultAddress,
         });
         if (!isActive) return;
-        setMaxRedeem(maxR as bigint);
+        setMaxRedeem(toBigIntValue(maxR));
 
         const totalA = await executeRead({
           functionName: "totalAssets",
@@ -376,7 +392,7 @@ export function useVaultDetailModel(
           address: resolvedVaultAddress,
         });
         if (!isActive) return;
-        setTotalAssets(totalA as bigint);
+        setTotalAssets(toBigIntValue(totalA));
       } catch (error) {
         console.error("Error fetching vault data:", error);
       }
@@ -406,7 +422,7 @@ export function useVaultDetailModel(
           address: resolvedVaultAddress,
         });
         if (!isActive) return;
-        setDepositedAssets(deposited as bigint);
+        setDepositedAssets(toBigIntValue(deposited));
       } catch (error) {
         console.error("Error fetching preview data:", error);
       }
@@ -458,7 +474,7 @@ export function useVaultDetailModel(
         args: [],
         address: resolvedVaultAddress,
       });
-      setTotalAssets(totalA as bigint);
+      setTotalAssets(toBigIntValue(totalA));
     } catch (error) {
       console.error("Error refreshing Vault Total Assets:", error);
     }
@@ -738,8 +754,8 @@ export function useVaultDetailModel(
         return executeWrite({
           abi: contract.abi,
           address: resolvedVaultAddress,
-          functionName: "executeStrategy",
-          args: [adapters, percentages, action],
+          functionName: action === 0 ? "executeStrategy" : "divestStrategy",
+          args: action === 0 ? [adapters, percentages, action] : undefined,
           options: { waitForReceipt: true },
         });
       },
