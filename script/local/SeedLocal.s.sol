@@ -7,8 +7,10 @@ import {TimeLock} from "../../contracts/governance/TimeLock.sol";
 import {DaoGovernor} from "../../contracts/governance/DaoGovernor.sol";
 import {GovernanceToken} from "../../contracts/governance/GovernanceToken.sol";
 import {ProtocolCore} from "../../contracts/core/ProtocolCore.sol";
+import {RiskManager} from "../../contracts/execution/RiskManager.sol";
 import {IERC4626} from "@openzeppelin/contracts/token/ERC20/extensions/ERC4626.sol";
 import {MockERC20} from "../../test/mocks/MockERC20.sol";
+import {MockV3AggregatorLocal} from "../../test/mocks/MockV3AggregatorLocal.sol";
 import {GenesisBonding} from "../../contracts/bootstrap/GenesisBonding.sol";
 import {GuardianAdministrator} from "../../contracts/guardians/GuardianAdministrator.sol";
 import {GuardianBondEscrow} from "../../contracts/guardians/GuardianBondEscrow.sol";
@@ -53,6 +55,9 @@ contract SeedLocal is Script {
     uint256 constant BLOCK_TIME = 12;
     uint8 constant VOTE_AGAINST = 0;
     uint8 constant VOTE_FOR = 1;
+    uint48 constant DEFAULT_HEARTBEAT = 1 days;
+    uint16 constant DEFAULT_DEPEG_MIN_BPS = 9_900;
+    uint16 constant DEFAULT_DEPEG_MAX_BPS = 10_100;
 
     bytes32 constant DEFAULT_ADMIN_ROLE = 0x00;
     bytes32 constant PROPOSER_ROLE = keccak256("PROPOSER_ROLE");
@@ -93,6 +98,7 @@ contract SeedLocal is Script {
         address vaultRegistry;
         address strategyRouter;
         address primaryToken;
+        address mockV3Aggregator;
     }
 
     // Full local cast of accounts used by the seed.
@@ -221,7 +227,10 @@ contract SeedLocal is Script {
             primaryToken: address(
                 GuardianBondEscrow(abi.decode(vm.parseJson(json, ".guardianBondEscrow"), (address)))
                     .guardianApplicationToken()
-            )
+            ),
+            mockV3Aggregator: _stringContains(json, "\"mockV3Aggregator\"")
+                ? abi.decode(vm.parseJson(json, ".mockV3Aggregator"), (address))
+                : address(0)
         });
     }
 
@@ -355,9 +364,32 @@ contract SeedLocal is Script {
         allowedGenesisTokens[2] = usdcToken;
 
         vm.startBroadcast(adminWalletPrivateKey);
+        address priceFeed = contracts.mockV3Aggregator;
+        if (priceFeed == address(0)) {
+            priceFeed = address(new MockV3AggregatorLocal(8, 1e8));
+        }
+
         ProtocolCore(contracts.protocolCore).setSupportedGenesisTokens(allowedGenesisTokens);
         ProtocolCore(contracts.protocolCore).setSupportedVaultAsset(secondaryToken, true);
         GenesisBonding(contracts.genesisBonding).setPurchaseTokens(allowedGenesisTokens);
+        RiskManager(contracts.riskManager).setAssetConfig(
+            contracts.primaryToken,
+            priceFeed,
+            DEFAULT_HEARTBEAT,
+            true,
+            DEFAULT_DEPEG_MIN_BPS,
+            DEFAULT_DEPEG_MAX_BPS,
+            true
+        );
+        RiskManager(contracts.riskManager).setAssetConfig(
+            secondaryToken,
+            priceFeed,
+            DEFAULT_HEARTBEAT,
+            true,
+            DEFAULT_DEPEG_MIN_BPS,
+            DEFAULT_DEPEG_MAX_BPS,
+            true
+        );
         vm.stopBroadcast();
     }
 

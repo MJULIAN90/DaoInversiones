@@ -75,6 +75,7 @@ contract DeployInvestmentDao is Script {
       genesisBonding,
       vaultFactory,
       aaveV3Adapter
+      // networkConfig.mockV3Aggregator
     );
 
     createContractsSdkStructure();
@@ -301,6 +302,7 @@ contract DeployInvestmentDao is Script {
     address genesisBonding,
     address vaultFactory,
     address aaveV3Adapter
+    // address mockV3Aggregator
   ) internal {
     string memory deploymentsDir = "deployments";
 
@@ -326,6 +328,7 @@ contract DeployInvestmentDao is Script {
     vm.serializeAddress(json, "vaultImplementation", vaultImplementation);
     vm.serializeAddress(json, "genesisBonding", genesisBonding);
     vm.serializeAddress(json, "vaultFactory", vaultFactory);
+    // vm.serializeAddress(json, "mockV3Aggregator", mockV3Aggregator);
     string memory finalJson = vm.serializeAddress(json, "aaveV3Adapter", aaveV3Adapter);
 
     vm.writeJson(finalJson, path);

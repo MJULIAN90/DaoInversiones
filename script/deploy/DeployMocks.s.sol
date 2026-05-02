@@ -5,7 +5,7 @@ import {Script, console} from "forge-std/Script.sol";
 import {HelperConfig} from "./HelperConfig.s.sol";
 import {MockERC20} from "../../test/mocks/MockERC20.sol";
 import {MockAavePool} from "../../test/mocks/MockAavePool.sol";
-import {MockV3Aggregator} from "../../lib/chainlink-brownie-contracts/contracts/src/v0.8/tests/MockV3Aggregator.sol";
+import {MockV3AggregatorLocal} from "../../test/mocks/MockV3AggregatorLocal.sol";
 
 contract DeployMocks is Script {
   function run() external returns (address mockERC20, address mockAavePool, address mockV3Aggregator) {
@@ -18,7 +18,7 @@ contract DeployMocks is Script {
       MockERC20 mockERC20Instance = new MockERC20("USDTGenesis", "USDTG", 18);
       MockERC20 unlinkedTestToken = new MockERC20("StandaloneTestToken", "STAND", 18);
       MockAavePool mockAavePoolInstance = new MockAavePool();
-      MockV3Aggregator mockV3AggregatorInstance = new MockV3Aggregator(8, 1e8);
+      MockV3AggregatorLocal mockV3AggregatorInstance = new MockV3AggregatorLocal(8, 1e8);
     vm.stopBroadcast();
 
     console.log("USDTGenesis deployed at:", address(mockERC20Instance));
