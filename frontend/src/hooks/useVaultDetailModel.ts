@@ -27,56 +27,18 @@ import {
 import type { VaultRegistryDetail } from "./shared/contractTypes";
 import useWriteContracts from "./useWriteContracts";
 import { useProtocolReads } from "./useProtocolReads";
-import type { ProtocolReadDefinition } from "./useProtocolReads";
+import type { ProtocolReadDefinition } from "./shared/protocolReads";
 import useContractReadExecutor from "./useContractReadExecutor";
-import { getReadContractResult } from "./shared/contractResults";
+import {
+  getReadContractResult,
+  toBigIntValue,
+} from "./shared/contractResults";
 import { resolveProtocolContract } from "./protocolContracts";
-
-type VaultDetailProtocolContext = {
-  vaultAddress: Address | undefined;
-};
-
-const strategyActionCopy: Record<
-  VaultStrategyAction,
-  {
-    title: string;
-    confirmation: string;
-  }
-> = {
-  0: {
-    title: "Execute investment strategy",
-    confirmation:
-      "Confirm the investment strategy transaction in your wallet. The vault allocation will be routed across the selected adapters.",
-  },
-  1: {
-    title: "Execute Divestment strategy",
-    confirmation:
-      "Confirm the Divestment strategy transaction in your wallet. The vault allocation will be routed across the selected adapters.",
-  },
-};
-
-const vaultDetailProtocolDefinitions: ProtocolReadDefinition<
-  "vaultDetail" | "isVaultDepositsPaused" | "isExecutionPaused",
-  VaultDetailProtocolContext
->[] = [
-  {
-    key: "vaultDetail",
-    contract: "getVaultRegistryContract",
-    functionName: "getVaultDetail",
-    args: (context) =>
-      context.vaultAddress ? [context.vaultAddress] : undefined,
-  },
-  {
-    key: "isVaultDepositsPaused",
-    contract: "getProtocolCoreContract",
-    functionName: "isVaultDepositsPaused",
-  },
-  {
-    key: "isExecutionPaused",
-    contract: "getRiskManagerContract",
-    functionName: "executionPaused",
-  },
-];
+import {
+  vaultDetailProtocolDefinitions,
+  type VaultDetailProtocolContext,
+} from "./definitions/protocolReads";
+import { strategyActionCopy } from "./definitions/vaultDetail";
 
 export function useVaultDetailModel(
   vaultAddress?: string,
@@ -99,22 +61,6 @@ export function useVaultDetailModel(
   const [depositedAssets, setDepositedAssets] = useState<bigint | undefined>();
   const [shareValue, setShareValue] = useState<bigint | undefined>();
   const [refreshTrigger, setRefreshTrigger] = useState(0);
-
-  const toBigIntValue = (value: unknown): bigint => {
-    if (typeof value === "bigint") {
-      return value;
-    }
-
-    if (typeof value === "number" && Number.isFinite(value)) {
-      return BigInt(Math.trunc(value));
-    }
-
-    if (typeof value === "string" && value.trim() !== "") {
-      return BigInt(value);
-    }
-
-    return 0n;
-  };
 
   const resolvedVaultAddress = useMemo(
     () =>

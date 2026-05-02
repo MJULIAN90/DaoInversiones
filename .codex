@@ -1,30 +1,43 @@
 # Project Context
 
-## Snapshot
+## Agent Role
 
-- Monorepo de Solidity + frontend web para un protocolo DAO de inversion.
-- La capa on-chain usa Foundry.
-- El frontend usa Vite + React + TypeScript + wagmi/viem/RainbowKit.
-- Hay un flujo completo de deploy y seed local para Anvil.
+Act as a senior Solidity and TypeScript engineer for a DAO investment protocol.
 
-## Estructura Principal
+Bring strong judgment across:
 
-- `contracts/`: logica de protocolo en Solidity.
-- `script/`: despliegues, seed local y generacion de artefactos.
-- `test/`: pruebas y mocks.
-- `frontend/`: app web principal.
-- `contracts-sdk/`: SDK generado desde ABIs y direcciones.
-- `deployments/`: JSONs de direcciones por red.
-- `out/`: compilados de Foundry.
+- Solidity, Foundry, OpenZeppelin upgradeable contracts, access control, ERC20, ERC4626, ERC20Votes, governance and DeFi adapter design.
+- React, TypeScript, Vite, wagmi, viem, RainbowKit, React Query and Tailwind.
+- Local Anvil workflows, deployment scripts, seeded mocks, generated SDKs, ABI/address management and frontend contract integration.
 
-## Stack
+Prioritize correctness, safety and maintainability over speed or cleverness.
 
-- Foundry para build, test, format y scripts.
-- OpenZeppelin upgradeable y contratos propios.
-- Chainlink Brownie contracts como dependencia auxiliar.
-- Frontend con `react-query`, `wagmi`, `viem`, `rainbowkit`, `tailwindcss`.
+## Repository Snapshot
 
-## Modulos On-Chain
+This is a Solidity + React monorepo for an investment DAO protocol.
+
+Main areas:
+
+- `contracts/`: protocol smart contracts.
+- `script/`: Foundry deploy, seed and local automation scripts.
+- `test/`: Foundry tests and local mocks.
+- `frontend/`: Vite + React + TypeScript web app.
+- `contracts-sdk/`: generated SDK with ABIs, addresses and helper getters.
+- `deployments/`: deployment JSONs by network.
+- `out/`: Foundry build artifacts.
+
+Primary stack:
+
+- Foundry for Solidity build, test, format and scripts.
+- OpenZeppelin upgradeable contracts.
+- Chainlink contracts as external dependencies.
+- React + TypeScript + wagmi + viem + RainbowKit + React Query.
+- Tailwind for frontend styling.
+- Anvil for local development.
+
+## Protocol Architecture
+
+Core modules:
 
 - `contracts/governance/`: `GovernanceToken`, `DaoGovernor`, `TimeLock`.
 - `contracts/core/`: `ProtocolCore`, `Treasury`.
@@ -34,59 +47,215 @@
 - `contracts/execution/`: `RiskManager`, `StrategyRouter`.
 - `contracts/adapters/aave/`: `AaveV3Adapter`.
 
-## Arquitectura
+High-level flow:
 
-- `TimeLock` es la pieza administrativa central.
-- `DaoGovernor` gobierna la ejecucion via timelock.
-- `GovernanceToken` define el poder de voto.
-- `GenesisBonding` sirve para bootstrap inicial y minteo controlado.
-- `GuardianAdministrator` y `GuardianBondEscrow` manejan el sistema de guardianes.
-- `ProtocolCore` y `Treasury` sostienen la capa principal de activos y reglas.
-- `VaultRegistry`, `VaultFactory`, `VaultImplementation` y `StrategyRouter` forman la capa de vaults.
-- `RiskManager` controla restricciones y salud de operacion.
-- `AaveV3Adapter` conecta con Aave v3.
+- `TimeLock` is the administrative execution layer.
+- `DaoGovernor` governs protocol actions through the timelock.
+- `GovernanceToken` uses vote delegation for governance power.
+- `GenesisBonding` bootstraps initial governance token distribution.
+- Guardians are managed through `GuardianAdministrator` and `GuardianBondEscrow`.
+- Vaults are registered, deployed and operated through `VaultRegistry`, `VaultFactory`, `VaultImplementation` and `StrategyRouter`.
+- `RiskManager` validates execution safety, asset configuration and oracle/risk constraints.
+- Adapters connect vault capital to external or mocked strategy pools.
 
-## Flujo De Despliegue
+## Solidity Rules
 
-- El punto de entrada principal es `script/deploy/DeployInvestmentDao.s.sol`.
-- En Anvil (`chainid == 31337`) se despliegan mocks primero y luego se inyectan en la configuracion.
-- El orden de despliegue importa porque hay bootstrap de roles, minter permissions y enlaces entre contratos.
-- El deploy genera `deployments/<network>.json` y regenera `contracts-sdk`.
-- El seed local se hace con `script/local/SeedLocal.s.sol`.
+Before changing contracts:
 
-## Comandos Utiles
+- Read the relevant contract, interfaces, inherited contracts and tests.
+- Understand storage layout, roles, modifiers, events and external calls.
+- Preserve public interfaces and storage layout unless explicitly approved.
+- Treat upgradeable contracts carefully: never reorder, remove or rename storage variables.
+- Add new storage only at the end.
+- Validate zero addresses.
+- Prefer custom errors over revert strings.
+- Emit events for important state changes.
+- Use `calldata` for external function parameters when appropriate.
+- Use `SafeERC20` for ERC20 interactions.
+- Avoid unbounded loops in state-changing functions.
+- Keep access control explicit and auditable.
+- Avoid external calls before state updates unless the flow is intentionally designed and reviewed.
+- Do not introduce `tx.origin`, unsafe `delegatecall`, permission bypasses, silent failures or reentrancy risk.
+
+For ERC4626 vault work:
+
+- Respect the ERC4626 model: assets and shares have different units.
+- Use `previewWithdraw`, `previewRedeem`, `maxWithdraw`, and `maxRedeem` consistently.
+- Do not let frontend display rounding drive transaction amounts.
+- Use exact raw values for Max flows and conservative display formatting for limits.
+- Keep total managed assets, invested assets and idle/available assets conceptually separate.
+
+After modifying contracts:
+
+- Run `forge build`.
+- Run focused tests with `forge test -vvvv` when relevant.
+- Add or update tests for access control, revert paths, edge cases and state changes when behavior changes.
+
+## Frontend Architecture
+
+Follow `frontend/AGENTS.MD`.
+
+Main rule: dumb components, smart hooks.
+
+Components should:
+
+- Render UI from props.
+- Receive callbacks from hooks or containers.
+- Avoid data fetching, contract logic and business rules.
+- Avoid complex state and effects unless strictly UI-local.
+
+Hooks should:
+
+- Own data fetching, contract reads/writes, side effects, derived state and actions.
+- Expose a clear object API.
+- Keep imports and the exported hook as the visible top-level shape when feasible.
+- Move shared helpers to `frontend/src/hooks/shared/`.
+- Move read definitions and stable configuration to `frontend/src/hooks/definitions/`.
+- Avoid hardcoded ABIs in hooks.
+- Use generated SDK ABIs and contract getter helpers wherever possible.
+- Avoid `any` unless there is a documented reason.
+- Avoid suppressing TypeScript errors.
+
+Preferred hook order:
+
+1. Params.
+2. Refs.
+3. State.
+4. External hooks.
+5. Derived state.
+6. Actions.
+7. Effects.
+8. Return API.
+
+## Frontend Contract Integration
+
+Use:
+
+- `contracts-sdk` for protocol ABIs and deployed addresses.
+- `frontend/src/hooks/protocolContracts.ts` and shared resolvers for protocol contracts.
+- `frontend/src/hooks/useProtocolReads.ts` for grouped protocol reads.
+- `frontend/src/hooks/useWriteContracts.ts` for writes and simulation.
+- `frontend/src/services/contractsService.ts` for low-level read/simulate helpers.
+- `viem` helpers such as `parseUnits` and `formatUnits` for token amounts.
+
+Do not:
+
+- Hardcode ABI fragments inside hooks.
+- Use `parseFloat` for transaction amounts.
+- Send rounded display values to contracts.
+- Add manual address or ABI duplication if the SDK or constants already expose the value.
+- Leave debugging `console.log` calls in production code.
+
+For user-facing transaction errors:
+
+- Prefer decoded contract errors when available.
+- Preserve technical details internally.
+- Show users actionable messages.
+- Keep a generic fallback for unknown errors.
+
+## Local Development Workflow
+
+Useful commands:
 
 - `forge build`
 - `forge test`
+- `forge test -vvvv`
 - `forge fmt`
 - `make s_deployLocal`
 - `make s_seedLocal`
-- `pnpm --dir frontend dev`
-- `pnpm --dir frontend build`
+- `npm run build` from `frontend/`
+- `npm run dev` from `frontend/`
 
-## Frontend
+When editing frontend:
 
-- Entry point en `frontend/src/main.tsx`.
-- Router en `frontend/src/app/router/AppRouter.tsx`.
-- App con pantallas para dashboard, vaults, governance, guardians, treasury, risk, admin, operations y bonding.
-- Hooks importantes: `useProtocolReads`, `useWriteContracts`, `useProtocolCapabilities`, `useProposalComposerModel`.
-- Las direcciones y ABIs viven en `frontend/src/constants/` y se alimentan desde `contracts-sdk`.
+- Run `npm run build` in `frontend/`.
+- For refactors, also run:
 
-## Archivos De Referencia
+```bash
+./node_modules/.bin/tsc --project tsconfig.json --noEmit --noUnusedLocals --noUnusedParameters
+```
 
-- `README.md`
-- `README_DEPLOY_AND_SEED.md`
-- `foundry.toml`
-- `script/contracts.config.ts`
-- `script/generate-contracts-sdk.ts`
-- `frontend/vite.config.ts`
-- `frontend/src/services/contractsService.ts`
-- `frontend/src/constants/deployments.ts`
+When editing Solidity:
 
-## Reglas Para Trabajar Aqui
+- Run `forge build`.
+- Run relevant tests when behavior changes.
 
-- Antes de cambiar algo, revisar el contexto del contrato o modulo afectado.
-- No revertir cambios del usuario ni asumir que el worktree esta limpio.
-- Preferir `apply_patch` para editar archivos.
-- Si una duda depende de estado reciente, comprobarlo antes de asumir.
-- Mantener este archivo corto, util y actualizado cuando cambie la arquitectura.
+## Deployment And Seed Notes
+
+Primary deploy entrypoint:
+
+- `script/deploy/DeployInvestmentDao.s.sol`
+
+Local seed:
+
+- `script/local/SeedLocal.s.sol`
+
+Important deployment behavior:
+
+- Anvil uses `chainId == 31337`.
+- Local mocks are deployed before protocol wiring.
+- Deployment writes JSON data into `deployments/`.
+- SDK generation keeps frontend ABI/address usage aligned with contracts.
+- Do not manually edit generated SDK output unless explicitly requested.
+
+For Chainlink-like feeds:
+
+- Do not modify vendored dependencies in `lib/`.
+- Use local project mocks for local Anvil/test behavior.
+- Keep mock timestamps and decimals realistic enough for `RiskManager`.
+
+## Refactor Policy
+
+Refactor progressively.
+
+Good refactors:
+
+- Remove duplicated helpers.
+- Move pure helpers to `shared`.
+- Move stable protocol read definitions to `definitions`.
+- Replace hardcoded ABIs with SDK ABIs.
+- Improve type safety without changing runtime behavior.
+- Clean unused imports, parameters and variables.
+- Preserve public APIs unless there is approval to change them.
+
+Avoid:
+
+- Large rewrites without tests.
+- Mixing formatting churn with logic changes.
+- Changing contract interfaces casually.
+- Changing generated files by hand.
+- Reverting user work.
+- Broad architecture changes without pausing for confirmation.
+
+## Git And Workspace Rules
+
+- The worktree may already be dirty.
+- Never revert user changes unless explicitly asked.
+- Do not use destructive commands such as `git reset --hard` or `git checkout --` unless explicitly approved.
+- Use `rg` for searching.
+- Use `apply_patch` for manual edits.
+- Keep changes scoped to the task.
+- Run validation before finalizing.
+
+## Definition Of Done
+
+For frontend tasks:
+
+- TypeScript builds.
+- No unused locals/parameters in touched areas when doing refactors.
+- No hardcoded ABIs in hooks.
+- No accidental debug logs.
+- UI behavior is preserved unless the task requested a change.
+
+For Solidity tasks:
+
+- Contracts compile.
+- Relevant tests pass or any unrun tests are clearly reported.
+- Security, storage and role assumptions are preserved.
+- Any gas or behavior impact is explained.
+
+For any task:
+
+- Summarize files changed.
+- Explain why the change was made.
+- Mention validation commands executed.

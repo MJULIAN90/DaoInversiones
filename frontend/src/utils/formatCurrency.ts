@@ -1,14 +1,5 @@
 import { formatUnits, parseUnits } from "viem";
 
-const TOKEN_SYMBOLS: Record<string, string> = {
-  ETH: "ETH",
-  WETH: "WETH",
-  USDC: "USDC",
-  USDT: "USDT",
-  DAI: "DAI",
-  GOV: "GOV",
-};
-
 export function formatCurrency(
   value: string | number,
   symbol: string = "USD",

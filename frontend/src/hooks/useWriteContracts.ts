@@ -30,7 +30,7 @@ export type ExecuteWriteParams = ContractReferenceWithOptionalAddress & {
   options?: ExecuteOptions;
 };
 
-const useWriteContracts = () => {
+export default function useWriteContracts() {
   const chainId = useChainId();
   const connection = useConnection();
   const writeContract = useWriteContract();
@@ -61,8 +61,6 @@ const useWriteContracts = () => {
             account: simulationAccount,
           });
         } catch (error) {
-          console.log("error:", error);
-          
           throw Object.assign(new Error("Transaction rejected"), {
             phase: "simulation" as const,
             cause: error,
@@ -95,6 +93,4 @@ const useWriteContracts = () => {
   return {
     executeWrite,
   };
-};
-
-export default useWriteContracts;
+}
