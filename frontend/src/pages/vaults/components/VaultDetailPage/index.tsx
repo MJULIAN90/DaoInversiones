@@ -436,40 +436,52 @@ export default function VaultDetailPage() {
               Redeem Shares
             </button>
             <div className="grid gap-3 md:grid-cols-3">
-              <div className="rounded-2xl border border-border bg-gray-50 px-4 py-4">
-                <p className="text-xs font-medium uppercase tracking-[0.16em] text-text-secondary">
-                  Withdrawable assets
-                </p>
-                <p className="mt-2 text-sm font-semibold text-text-primary">
+              <div className="flex h-full min-h-[7.5rem] flex-col rounded-2xl border border-border bg-gray-50 px-4 py-4">
+                <div className="min-h-[3rem]">
+                  <p className="text-xs font-medium uppercase tracking-[0.16em] text-text-secondary">
+                    Withdrawable assets
+                  </p>
+                </div>
+                <p className="mt-auto pt-2 text-lg font-semibold text-text-primary">
                   {position.withdrawableAssets}
                 </p>
               </div>
               <div
-                className={`rounded-2xl border px-4 py-4 ${
+                className={`flex h-full min-h-[7.5rem] flex-col rounded-2xl border px-4 py-4 ${
                   hasRedeemableShares
                     ? "border-green-200 bg-green-50"
                     : "border-yellow-200 bg-yellow-50"
                 }`}
               >
+                <div className="min-h-[3rem]">
+                  <p
+                    className={`text-xs font-medium uppercase tracking-[0.16em] ${
+                      hasRedeemableShares
+                        ? "text-green-800"
+                        : "text-yellow-800"
+                    }`}
+                  >
+                    Redeemable now
+                  </p>
+                </div>
                 <p
-                  className={`text-xs font-medium uppercase tracking-[0.16em] ${
-                    hasRedeemableShares ? "text-green-800" : "text-yellow-800"
-                  }`}
-                >
-                  Redeemable now
-                </p>
-                <p
-                  className={`mt-2 text-sm font-semibold ${
+                  className={`mt-auto pt-2 text-lg font-semibold ${
                     hasRedeemableShares ? "text-green-700" : "text-yellow-700"
                   }`}
                 >
                   {position.redeemableShares}
                 </p>
               </div>
-              <SummaryStat
-                label="1 Share in USDTG"
-                value={position.shareValue}
-              />
+              <div className="flex h-full min-h-[7.5rem] flex-col rounded-2xl border border-border bg-gray-50 px-4 py-4">
+                <div className="min-h-[3rem]">
+                  <p className="text-xs font-medium text-text-secondary">
+                    1 Share in USDTG
+                  </p>
+                </div>
+                <p className="mt-auto pt-2 text-lg font-semibold text-text-primary">
+                  {position.shareValue}
+                </p>
+              </div>
             </div>
             <div
               className={`rounded-2xl border px-4 py-4 ${
@@ -621,7 +633,7 @@ export default function VaultDetailPage() {
                         />
                       </div>
 
-                      <div className="flex md:justify-end">
+                      <div className="flex md:justify-end md:pt-7">
                         <button
                           type="button"
                           onClick={() => handleRemoveStrategyRow(index)}

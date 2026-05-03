@@ -237,7 +237,7 @@ contract SeedLocal is Script {
     // Build the complete set of actors used by the seed.
     // The admin guardian is not generated here; it must be the wallet configured in .env
     // so the developer can manually interact with the protocol after seeding.
-    function _buildParticipants(uint256 adminWalletPrivateKey) internal returns (Participants memory participants) {
+    function _buildParticipants(uint256 adminWalletPrivateKey) internal pure returns (Participants memory participants) {
         // These are the default Anvil accounts. The admin guardian stays on account (0),
         // while the remaining local actors use accounts (1) through (9).
         participants.guardian1 = _participantFromPrivateKey(ANVIL_ACCOUNT_1_PRIVATE_KEY, "guardian1");
@@ -1303,7 +1303,7 @@ contract SeedLocal is Script {
 
     // JSON fragment helpers kept separate to avoid a very large stack frame when composing
     // the final persisted file.
-    function _guardiansJson(Participants memory participants) internal view returns (string memory json) {
+    function _guardiansJson(Participants memory participants) internal pure returns (string memory json) {
         json = string(
             abi.encodePacked(
                 "{",
@@ -1325,7 +1325,7 @@ contract SeedLocal is Script {
         address[] memory guardian1Vaults,
         address[] memory guardian2Vaults,
         address[] memory adminGuardianVaults
-    ) internal view returns (string memory json) {
+    ) internal pure returns (string memory json) {
         json = string(
             abi.encodePacked(
                 "{",
@@ -1343,7 +1343,7 @@ contract SeedLocal is Script {
     }
 
     // Proposal ids are serialized as strings to avoid frontend issues with large uint256 values.
-    function _proposalIdsByStateJson(ProposalSeeds memory proposalSeeds) internal view returns (string memory json) {
+    function _proposalIdsByStateJson(ProposalSeeds memory proposalSeeds) internal pure returns (string memory json) {
         json = string(
             abi.encodePacked(
                 "{",
@@ -1375,7 +1375,7 @@ contract SeedLocal is Script {
 
     function _guardianApplicationProposalIdsJson(ProposalSeeds memory proposalSeeds)
         internal
-        view
+        pure
         returns (string memory json)
     {
         json = string(
@@ -1396,7 +1396,7 @@ contract SeedLocal is Script {
     }
 
     // Lightweight address array serializer used by the local seed snapshot.
-    function _addressArrayToJson(address[] memory values) internal view returns (string memory json) {
+    function _addressArrayToJson(address[] memory values) internal pure returns (string memory json) {
         json = "[";
 
         for (uint256 i = 0; i < values.length; i++) {

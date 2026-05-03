@@ -111,29 +111,6 @@ contract StrategyRouter is
     emit RiskManagerUpdated(oldRiskManager, newRiskManager);
   }
 
-  function execute(
-    address adapter,
-    address vault,
-    address asset,
-    uint256 amountToInvest,
-    uint8 action
-  ) external override {
-    if (vault != msg.sender) revert CommonErrors.Unauthorized();
-
-    _validateVaultAndRisk(vault, asset);
-    _validateAdapter(adapter);
-
-    IStrategyAdapter(adapter).execute(vault, action, amountToInvest);
-
-    address[] memory adapters = new address[](1);
-    adapters[0] = adapter;
-
-    uint256[] memory amounts = new uint256[](1);
-    amounts[0] = amountToInvest;
-
-    emit StrategyExecuted(vault, adapters, asset, amounts, action);
-  }
-
   function executeMultiple(
     address vault,
     address asset,

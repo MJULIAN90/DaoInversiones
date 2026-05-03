@@ -13,7 +13,6 @@ import { useProtocolCapabilities } from "./useProtocolCapabilities";
 import Swal from "sweetalert2";
 import {
   abiERC20,
-  abiStrategyAdapter,
   formatAddress,
   formatTokenAmount,
   formatTokenAmountFloor,
@@ -279,7 +278,7 @@ export function useVaultDetailModel(
   const strategyExecutionReady =
     strategyAllocationStatuses.length > 0 &&
     strategyAllocationStatuses.every((row) => row.isComplete) &&
-    strategyAllocationTotal === 100;
+    strategyAllocationTotal <= 100;
 
   useEffect(() => {
     if (!resolvedVaultAddress) {
@@ -323,47 +322,40 @@ export function useVaultDetailModel(
         const totalAssetsValue = toBigIntValue(totalA);
         setTotalAssets(totalAssetsValue);
 
-        const activeAdapters = (await executeRead({
-          functionName: "getActiveAdapters",
-          functionContract: "getVaultImplementationContract",
-          args: [],
-          address: resolvedVaultAddress,
-        })) as Address[] | undefined;
+        const vaultAsset =
+          vaultDetailTyped?.asset ??
+          ((await executeRead({
+            functionName: "asset",
+            functionContract: "getVaultImplementationContract",
+            args: [],
+            address: resolvedVaultAddress,
+          })) as Address | undefined);
 
         if (!isActive) return;
 
-        if (!vaultDetailTyped?.asset || !activeAdapters || activeAdapters.length === 0) {
+        if (!vaultAsset) {
           setInvestedAssets(0n);
           setAvailableAssets(totalAssetsValue);
           return;
         }
 
-        const adapterTotals = await Promise.all(
-          activeAdapters.map(async (adapter) => {
-            const invested = await executeRead({
-              abi: abiStrategyAdapter,
-              address: adapter,
-              functionName: "totalAssets",
-              args: [resolvedVaultAddress, vaultDetailTyped.asset],
-            });
-
-            return toBigIntValue(invested);
-          }),
-        );
+        const idleAssets = await executeRead({
+          abi: abiERC20,
+          address: vaultAsset,
+          functionName: "balanceOf",
+          args: [resolvedVaultAddress],
+        });
 
         if (!isActive) return;
 
-        const investedAssetsValue = adapterTotals.reduce(
-          (sum, value) => sum + value,
-          0n,
-        );
+        const availableAssetsValue = toBigIntValue(idleAssets);
+        const investedAssetsValue =
+          totalAssetsValue > availableAssetsValue
+            ? totalAssetsValue - availableAssetsValue
+            : 0n;
 
         setInvestedAssets(investedAssetsValue);
-        setAvailableAssets(
-          totalAssetsValue > investedAssetsValue
-            ? totalAssetsValue - investedAssetsValue
-            : 0n,
-        );
+        setAvailableAssets(availableAssetsValue);
       } catch (error) {
         console.error("Error fetching vault data:", error);
       }

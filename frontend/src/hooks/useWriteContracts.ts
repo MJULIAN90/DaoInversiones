@@ -61,6 +61,8 @@ export default function useWriteContracts() {
             account: simulationAccount,
           });
         } catch (error) {
+          console.log("error:", error);
+          
           throw Object.assign(new Error("Transaction rejected"), {
             phase: "simulation" as const,
             cause: error,

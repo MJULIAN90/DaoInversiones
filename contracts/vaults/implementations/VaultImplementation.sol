@@ -376,10 +376,6 @@ contract VaultImplementation is
       _grantRole(STRATEGY_EXECUTOR_ROLE, adapter);
     }
 
-    if (totalBps != MAX_BPS) {
-      revert VaultImplementation__InvalidPercentage();
-    }
-
     emit StrategyExecutionRequest(msg.sender, newAdapters, newAllocationBps);
 
     uint256 idleAssets = IERC20(asset()).balanceOf(address(this));
