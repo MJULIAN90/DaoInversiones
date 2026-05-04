@@ -18,3 +18,7 @@ deployments/
 contracts-sdk/
 
 node_modules/
+
+tracking_test.md
+TESTING_STRATEGY.md
+KNOWN_ISSUES.md
