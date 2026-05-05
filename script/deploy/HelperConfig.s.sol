@@ -1,9 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.33;
 
-import {Script, console} from "forge-std/Script.sol";
-import {MockERC20} from "../../test/mocks/MockERC20.sol";
-import {MockAavePool} from "../../test/mocks/MockAavePool.sol";
+import {Script} from "forge-std/Script.sol";
 
 contract HelperConfig is Script {
   struct NetworkConfig {
@@ -16,19 +14,22 @@ contract HelperConfig is Script {
     address mockV3Aggregator;
   }
 
-  uint256 public constant DEFAULT_ANVIL_PRIVATE_KEY = 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80;
+  uint256 public constant DEFAULT_ANVIL_PRIVATE_KEY =
+    0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80;
 
   NetworkConfig private activeNetworkConfig;
 
   constructor() {
-    if(block.chainid == 11155111) {
+    if (block.chainid == 31337) {
+      activeNetworkConfig = getOrCreateAnvilConfig();
+    } else if (block.chainid == 11155111) {
       activeNetworkConfig = getSepoliaConfig();
     } else {
-      activeNetworkConfig = getOrCreateAnvilConfig();
+      activeNetworkConfig = getEnvNetworkConfig();
     }
   }
 
-  function getSepoliaConfig() public view returns(NetworkConfig memory sepoliaNetworkConfig) {
+  function getSepoliaConfig() public view returns (NetworkConfig memory sepoliaNetworkConfig) {
     address[] memory allowedGenesisTokens = new address[](1);
     allowedGenesisTokens[0] = 0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238;
 
@@ -43,8 +44,8 @@ contract HelperConfig is Script {
     });
   }
 
-  function getOrCreateAnvilConfig() public view returns(NetworkConfig memory anvilNetworkConfig) {
-    if(activeNetworkConfig.allowedGenesisTokens.length > 0) return activeNetworkConfig;
+  function getOrCreateAnvilConfig() public view returns (NetworkConfig memory anvilNetworkConfig) {
+    if (activeNetworkConfig.allowedGenesisTokens.length > 0) return activeNetworkConfig;
 
     // Los mocks se desplegarán en cada script individual dentro de vm.startBroadcast
     address[] memory allowedGenesisTokens = new address[](1);
@@ -63,7 +64,22 @@ contract HelperConfig is Script {
     return anvilNetworkConfig;
   }
 
-  function getActiveNetworkConfig() external view returns(NetworkConfig memory) {
+  function getEnvNetworkConfig() public view returns (NetworkConfig memory envNetworkConfig) {
+    address[] memory allowedGenesisTokens = new address[](1);
+    allowedGenesisTokens[0] = vm.envAddress("ALLOWED_GENESIS_TOKEN");
+
+    envNetworkConfig = NetworkConfig({
+      allowedGenesisTokens: allowedGenesisTokens,
+      allowedVaultToken: vm.envAddress("ALLOWED_VAULT_TOKEN"),
+      deployerPrivateKey: vm.envUint("PRIVATE_KEY"),
+      aavePool: vm.envAddress("AAVE_POOL"),
+      compoundComet: vm.envAddress("COMPOUND_COMET"),
+      mockV3Aggregator: vm.envAddress("PRICE_FEED"),
+      networkName: vm.envString("NETWORK_NAME")
+    });
+  }
+
+  function getActiveNetworkConfig() external view returns (NetworkConfig memory) {
     return activeNetworkConfig;
   }
 }
