@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.33;
 
-import {Test} from "forge-std/Test.sol";
+import {Test, console} from "forge-std/Test.sol";
 import {DeployInvestmentDaoHarness} from "../helpers/DeployInvestmentDaoHarness.sol";
 import {InvestmentDaoBootstrapHarness} from "../helpers/InvestmentDaoBootstrapHarness.sol";
 import {TimeLock} from "../../contracts/governance/TimeLock.sol";
@@ -9,10 +9,20 @@ import {DaoGovernor} from "../../contracts/governance/DaoGovernor.sol";
 import {GovernanceToken} from "../../contracts/governance/GovernanceToken.sol";
 import {GuardianAdministrator} from "../../contracts/guardians/GuardianAdministrator.sol";
 import {VaultRegistry} from "../../contracts/vaults/registry/VaultRegistry.sol";
+import {GenesisBonding} from "../../contracts/bootstrap/GenesisBonding.sol";
+import {ProtocolCore} from "../../contracts/core/ProtocolCore.sol";
+import {RiskManager} from "../../contracts/execution/RiskManager.sol";
+import {StrategyRouter} from "../../contracts/execution/StrategyRouter.sol";
+import {GuardianBondEscrow} from "../../contracts/guardians/GuardianBondEscrow.sol";
+import {VaultFactory} from "../../contracts/vaults/factory/VaultFactory.sol";
+import {VaultImplementation} from "../../contracts/vaults/implementations/VaultImplementation.sol";
 
 contract DeployInvestmentDaoTest is Test {
   uint256 private constant BLOCK_TIME = 12;
   uint256 private constant NONZERO_DELAY = 1 days;
+	bytes32 constant DEFAULT_ADMIN_ROLE = 0x00;
+  bytes32 constant MANAGER_ROLE = keccak256("MANAGER_ROLE");
+  bytes32 constant ADAPTER_MANAGER_ROLE = keccak256("ADAPTER_MANAGER_ROLE");
 
   TimeLock private timeLock;
   GovernanceToken private governanceToken;
@@ -132,5 +142,21 @@ contract DeployInvestmentDaoTest is Test {
     assertTrue(executedAfterDelay);
     assertTrue(delayedTimeLock.isOperationDone(operationId));
     assertTrue(delayedVaultRegistry.hasRole(delayedVaultRegistry.FACTORY_ROLE(), expectedFactory));
+  }
+
+  function testValidateRolesTimeLockInContracts() public view {
+		assertTrue(GenesisBonding(genesisBonding).hasRole(DEFAULT_ADMIN_ROLE, address(timeLock)));
+		assertTrue(ProtocolCore(protocolCore).hasRole(DEFAULT_ADMIN_ROLE, address(timeLock)));
+		assertTrue(ProtocolCore(protocolCore).hasRole(MANAGER_ROLE, address(timeLock)));
+		assertTrue(governanceToken.hasRole(DEFAULT_ADMIN_ROLE, address(timeLock)));
+		assertTrue(RiskManager(riskManager).hasRole(DEFAULT_ADMIN_ROLE, address(timeLock)));
+		assertTrue(RiskManager(riskManager).hasRole(MANAGER_ROLE, address(timeLock)));
+    assertTrue(StrategyRouter(strategyRouter).hasRole(DEFAULT_ADMIN_ROLE, address(timeLock)));
+		assertTrue(StrategyRouter(strategyRouter).hasRole(ADAPTER_MANAGER_ROLE, address(timeLock)));
+		assertTrue(governanceToken.hasRole(DEFAULT_ADMIN_ROLE, address(timeLock)));
+		assertTrue(GuardianBondEscrow(guardianBondEscrow).hasRole(DEFAULT_ADMIN_ROLE, address(timeLock)));
+		assertTrue(VaultFactory(vaultFactory).hasRole(DEFAULT_ADMIN_ROLE, address(timeLock)));
+		assertTrue(VaultRegistry(vaultRegistry).hasRole(DEFAULT_ADMIN_ROLE, address(timeLock)));
+		assertFalse(VaultImplementation(vaultImplementation).hasRole(DEFAULT_ADMIN_ROLE, address(timeLock)));
   }
 }

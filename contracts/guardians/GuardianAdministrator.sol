@@ -58,7 +58,11 @@ contract GuardianAdministrator {
     _;
   }
 
-  constructor(IGovernor governor_, address timelock_, uint256 minStake_) {
+  constructor(
+    IGovernor governor_,
+    address timelock_,
+    uint256 minStake_)
+  {
     if (address(governor_) == address(0)) {
       revert CommonErrors.ZeroAddress();
     }
