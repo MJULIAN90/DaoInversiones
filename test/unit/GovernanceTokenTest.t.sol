@@ -12,7 +12,7 @@ contract GovernaceTokenTest is Test{
 
   event MintingFinished();
 
-  GovernanceToken governanceToken; 
+  GovernanceToken governanceToken;
   function setUp() public {
     governanceToken = new GovernanceToken(adminTimeLock);
   }
@@ -29,7 +29,7 @@ contract GovernaceTokenTest is Test{
 
   function testRevertWithInvalidRoleMinter() public {
     vm.expectRevert();
-    
+
     vm.prank(userRoleMinter);
       governanceToken.mint(userTOMintBalance, AMOUNT_MINT);
   }
@@ -62,7 +62,6 @@ contract GovernaceTokenTest is Test{
 
     vm.prank(userRoleMinter);
       governanceToken.finishMinting();
-
 
     vm.expectRevert(GovernanceToken.GovernanceToken__MintingDisabled.selector);
 
