@@ -1,0 +1,117 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<html lang="en">
+
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <title>LCOV - lcov.info - script/deploy/script/deploy/DeployProtocolCore.s.sol</title>
+  <link rel="stylesheet" type="text/css" href="../../../../gcov.css">
+</head>
+
+<body>
+
+          <table width="100%" border=0 cellspacing=0 cellpadding=0>
+            <tr><td class="title">LCOV - code coverage report</td></tr>
+            <tr><td class="ruler"><img src="../../../../glass.png" width=3 height=3 alt=""></td></tr>
+
+            <tr>
+              <td width="100%">
+                <table cellpadding=1 border=0 width="100%">
+          <tr>
+            <td width="10%" class="headerItem">Current view:</td>
+            <td width="10%" class="headerValue"><a href="../../../../index.html">top level</a> - <a href="index.html">script/deploy/script/deploy</a> - DeployProtocolCore.s.sol<span style="font-size: 80%;"> (source / <a href="DeployProtocolCore.s.sol.func-c.html">functions</a>)</span></td>
+            <td width="5%"></td>
+            <td width="5%"></td>
+            <td width="5%" class="headerCovTableHead">Coverage</td>
+            <td width="5%" class="headerCovTableHead" title="Covered + Uncovered code">Total</td>
+            <td width="5%" class="headerCovTableHead" title="Exercised code only">Hit</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Test:</td>
+            <td class="headerValue">lcov.info</td>
+            <td></td>
+            <td class="headerItem">Lines:</td>
+            <td class="headerCovTableEntryMed">81.2&nbsp;%</td>
+            <td class="headerCovTableEntry">16</td>
+            <td class="headerCovTableEntry">13</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Test Date:</td>
+            <td class="headerValue">2026-05-09 12:39:03</td>
+            <td></td>
+            <td class="headerItem">Functions:</td>
+            <td class="headerCovTableEntryHi">100.0&nbsp;%</td>
+            <td class="headerCovTableEntry">1</td>
+            <td class="headerCovTableEntry">1</td>
+          </tr>
+                  <tr><td><img src="../../../../glass.png" width=3 height=3 alt=""></td></tr>
+                </table>
+              </td>
+            </tr>
+
+            <tr><td class="ruler"><img src="../../../../glass.png" width=3 height=3 alt=""></td></tr>
+          </table>
+
+          <table cellpadding=0 cellspacing=0 border=0>
+            <tr>
+              <td><br></td>
+            </tr>
+            <tr>
+              <td>
+<pre class="sourceHeading">            Line data    Source code</pre>
+<pre class="source">
+<span id="L1"><span class="lineNum">       1</span>              : // SPDX-License-Identifier: MIT</span>
+<span id="L2"><span class="lineNum">       2</span>              : pragma solidity ^0.8.33;</span>
+<span id="L3"><span class="lineNum">       3</span>              : </span>
+<span id="L4"><span class="lineNum">       4</span>              : import {Script, console} from &quot;forge-std/Script.sol&quot;;</span>
+<span id="L5"><span class="lineNum">       5</span>              : import {HelperConfig} from &quot;./HelperConfig.s.sol&quot;;</span>
+<span id="L6"><span class="lineNum">       6</span>              : import {ProtocolCore} from &quot;../../contracts/core/ProtocolCore.sol&quot;;</span>
+<span id="L7"><span class="lineNum">       7</span>              : import {ERC1967Proxy} from &quot;@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol&quot;;</span>
+<span id="L8"><span class="lineNum">       8</span>              : </span>
+<span id="L9"><span class="lineNum">       9</span>              : contract DeployProtocolCore is Script {</span>
+<span id="L10"><span class="lineNum">      10</span> <span class="tlaGNC tlaBgGNC">          16 :   function run(</span></span>
+<span id="L11"><span class="lineNum">      11</span>              :     HelperConfig config,</span>
+<span id="L12"><span class="lineNum">      12</span>              :     address _timeLock,</span>
+<span id="L13"><span class="lineNum">      13</span>              :     address _deployer,</span>
+<span id="L14"><span class="lineNum">      14</span>              :     address[] memory _allowedTokens,</span>
+<span id="L15"><span class="lineNum">      15</span>              :     address _allowedVaultToken</span>
+<span id="L16"><span class="lineNum">      16</span>              :   ) external returns (ProtocolCore) {</span>
+<span id="L17"><span class="lineNum">      17</span> <span class="tlaGNC">          16 :     HelperConfig.NetworkConfig memory networkConfig = config.getActiveNetworkConfig();</span></span>
+<span id="L18"><span class="lineNum">      18</span>              : </span>
+<span id="L19"><span class="lineNum">      19</span> <span class="tlaGNC">          16 :     uint256 deployerPrivateKey = networkConfig.deployerPrivateKey;</span></span>
+<span id="L20"><span class="lineNum">      20</span> <span class="tlaGNC">          16 :     address deployer = _deployer == address(0) ? vm.addr(deployerPrivateKey) : _deployer;</span></span>
+<span id="L21"><span class="lineNum">      21</span> <span class="tlaGNC">          16 :     address[] memory allowedTokens = _allowedTokens.length &gt; 0 ? _allowedTokens : networkConfig.allowedGenesisTokens;</span></span>
+<span id="L22"><span class="lineNum">      22</span> <span class="tlaGNC">          16 :     address allowedVaultToken =</span></span>
+<span id="L23"><span class="lineNum">      23</span> <span class="tlaGNC">          16 :       _allowedVaultToken == address(0) ? networkConfig.allowedVaultToken : _allowedVaultToken;</span></span>
+<span id="L24"><span class="lineNum">      24</span>              : </span>
+<span id="L25"><span class="lineNum">      25</span> <span class="tlaUNC tlaBgUNC">           0 :     if (_timeLock == address(0)) {</span></span>
+<span id="L26"><span class="lineNum">      26</span> <span class="tlaUNC">           0 :       console.log(&quot;Error: TimeLock address required&quot;);</span></span>
+<span id="L27"><span class="lineNum">      27</span> <span class="tlaUNC">           0 :       revert(&quot;TimeLock not provided&quot;);</span></span>
+<span id="L28"><span class="lineNum">      28</span>              :     }</span>
+<span id="L29"><span class="lineNum">      29</span>              : </span>
+<span id="L30"><span class="lineNum">      30</span> <span class="tlaGNC tlaBgGNC">          16 :     vm.startBroadcast(deployerPrivateKey);</span></span>
+<span id="L31"><span class="lineNum">      31</span> <span class="tlaGNC">          16 :     ProtocolCore implementation = new ProtocolCore();</span></span>
+<span id="L32"><span class="lineNum">      32</span> <span class="tlaGNC">          16 :     ERC1967Proxy proxy = new ERC1967Proxy(</span></span>
+<span id="L33"><span class="lineNum">      33</span>              :       address(implementation),</span>
+<span id="L34"><span class="lineNum">      34</span>              :       abi.encodeCall(ProtocolCore.initialize, (payable(_timeLock), deployer, allowedTokens, allowedVaultToken))</span>
+<span id="L35"><span class="lineNum">      35</span>              :     );</span>
+<span id="L36"><span class="lineNum">      36</span> <span class="tlaGNC">          16 :     vm.stopBroadcast();</span></span>
+<span id="L37"><span class="lineNum">      37</span>              : </span>
+<span id="L38"><span class="lineNum">      38</span> <span class="tlaGNC">          16 :     console.log(&quot;ProtocolCore deployed at:&quot;, address(proxy));</span></span>
+<span id="L39"><span class="lineNum">      39</span> <span class="tlaGNC">          16 :     return ProtocolCore(address(proxy));</span></span>
+<span id="L40"><span class="lineNum">      40</span>              :   }</span>
+<span id="L41"><span class="lineNum">      41</span>              : }</span>
+        </pre>
+              </td>
+            </tr>
+          </table>
+          <br>
+
+          <table width="100%" border=0 cellspacing=0 cellpadding=0>
+            <tr><td class="ruler"><img src="../../../../glass.png" width=3 height=3 alt=""></td></tr>
+            <tr><td class="versionInfo">Generated by: <a href="https://github.com//linux-test-project/lcov" target="_parent">LCOV version 2.0-1</a></td></tr>
+          </table>
+          <br>
+
+</body>
+</html>

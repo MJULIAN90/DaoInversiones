@@ -1,0 +1,1487 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<html lang="en">
+
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <title>LCOV - lcov.info - script/local/script/local/SeedLocal.s.sol</title>
+  <link rel="stylesheet" type="text/css" href="../../../../gcov.css">
+</head>
+
+<body>
+
+          <table width="100%" border=0 cellspacing=0 cellpadding=0>
+            <tr><td class="title">LCOV - code coverage report</td></tr>
+            <tr><td class="ruler"><img src="../../../../glass.png" width=3 height=3 alt=""></td></tr>
+
+            <tr>
+              <td width="100%">
+                <table cellpadding=1 border=0 width="100%">
+          <tr>
+            <td width="10%" class="headerItem">Current view:</td>
+            <td width="10%" class="headerValue"><a href="../../../../index.html">top level</a> - <a href="index.html">script/local/script/local</a> - SeedLocal.s.sol<span style="font-size: 80%;"> (source / <a href="SeedLocal.s.sol.func-c.html">functions</a>)</span></td>
+            <td width="5%"></td>
+            <td width="5%"></td>
+            <td width="5%" class="headerCovTableHead">Coverage</td>
+            <td width="5%" class="headerCovTableHead" title="Covered + Uncovered code">Total</td>
+            <td width="5%" class="headerCovTableHead" title="Exercised code only">Hit</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Test:</td>
+            <td class="headerValue">lcov.info</td>
+            <td></td>
+            <td class="headerItem">Lines:</td>
+            <td class="headerCovTableEntryLo">0.0&nbsp;%</td>
+            <td class="headerCovTableEntry">451</td>
+            <td class="headerCovTableEntry">0</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Test Date:</td>
+            <td class="headerValue">2026-05-09 12:39:03</td>
+            <td></td>
+            <td class="headerItem">Functions:</td>
+            <td class="headerCovTableEntryLo">0.0&nbsp;%</td>
+            <td class="headerCovTableEntry">46</td>
+            <td class="headerCovTableEntry">0</td>
+          </tr>
+                  <tr><td><img src="../../../../glass.png" width=3 height=3 alt=""></td></tr>
+                </table>
+              </td>
+            </tr>
+
+            <tr><td class="ruler"><img src="../../../../glass.png" width=3 height=3 alt=""></td></tr>
+          </table>
+
+          <table cellpadding=0 cellspacing=0 border=0>
+            <tr>
+              <td><br></td>
+            </tr>
+            <tr>
+              <td>
+<pre class="sourceHeading">            Line data    Source code</pre>
+<pre class="source">
+<span id="L1"><span class="lineNum">       1</span>              : // SPDX-License-Identifier: MIT</span>
+<span id="L2"><span class="lineNum">       2</span>              : pragma solidity ^0.8.33;</span>
+<span id="L3"><span class="lineNum">       3</span>              : </span>
+<span id="L4"><span class="lineNum">       4</span>              : import {Script, console} from &quot;forge-std/Script.sol&quot;;</span>
+<span id="L5"><span class="lineNum">       5</span>              : import {HelperConfig} from &quot;../deploy/HelperConfig.s.sol&quot;;</span>
+<span id="L6"><span class="lineNum">       6</span>              : import {TimeLock} from &quot;../../contracts/governance/TimeLock.sol&quot;;</span>
+<span id="L7"><span class="lineNum">       7</span>              : import {DaoGovernor} from &quot;../../contracts/governance/DaoGovernor.sol&quot;;</span>
+<span id="L8"><span class="lineNum">       8</span>              : import {GovernanceToken} from &quot;../../contracts/governance/GovernanceToken.sol&quot;;</span>
+<span id="L9"><span class="lineNum">       9</span>              : import {ProtocolCore} from &quot;../../contracts/core/ProtocolCore.sol&quot;;</span>
+<span id="L10"><span class="lineNum">      10</span>              : import {RiskManager} from &quot;../../contracts/execution/RiskManager.sol&quot;;</span>
+<span id="L11"><span class="lineNum">      11</span>              : import {IERC4626} from &quot;@openzeppelin/contracts/token/ERC20/extensions/ERC4626.sol&quot;;</span>
+<span id="L12"><span class="lineNum">      12</span>              : import {MockERC20} from &quot;../../test/mocks/MockERC20.sol&quot;;</span>
+<span id="L13"><span class="lineNum">      13</span>              : import {MockV3AggregatorLocal} from &quot;../../test/mocks/MockV3AggregatorLocal.sol&quot;;</span>
+<span id="L14"><span class="lineNum">      14</span>              : import {GenesisBonding} from &quot;../../contracts/bootstrap/GenesisBonding.sol&quot;;</span>
+<span id="L15"><span class="lineNum">      15</span>              : import {GuardianAdministrator} from &quot;../../contracts/guardians/GuardianAdministrator.sol&quot;;</span>
+<span id="L16"><span class="lineNum">      16</span>              : import {GuardianBondEscrow} from &quot;../../contracts/guardians/GuardianBondEscrow.sol&quot;;</span>
+<span id="L17"><span class="lineNum">      17</span>              : import {VaultFactory} from &quot;../../contracts/vaults/factory/VaultFactory.sol&quot;;</span>
+<span id="L18"><span class="lineNum">      18</span>              : import {VaultRegistry} from &quot;../../contracts/vaults/registry/VaultRegistry.sol&quot;;</span>
+<span id="L19"><span class="lineNum">      19</span>              : import {IGovernor} from &quot;@openzeppelin/contracts/governance/IGovernor.sol&quot;;</span>
+<span id="L20"><span class="lineNum">      20</span>              : </span>
+<span id="L21"><span class="lineNum">      21</span>              : contract SeedLocal is Script {</span>
+<span id="L22"><span class="lineNum">      22</span>              :   // -------------------------------------------------------------------------</span>
+<span id="L23"><span class="lineNum">      23</span>              :   // Seed configuration</span>
+<span id="L24"><span class="lineNum">      24</span>              :   // -------------------------------------------------------------------------</span>
+<span id="L25"><span class="lineNum">      25</span>              :   // This script is intentionally opinionated for Anvil only:</span>
+<span id="L26"><span class="lineNum">      26</span>              :   // - it enriches the local environment with extra assets and actors</span>
+<span id="L27"><span class="lineNum">      27</span>              :   // - it grants broad local testing permissions to the admin wallet from .env</span>
+<span id="L28"><span class="lineNum">      28</span>              :   // - it creates observable protocol activity and governance proposal states</span>
+<span id="L29"><span class="lineNum">      29</span>              :   // - it persists a local-only JSON snapshot consumed by frontend/dev tooling</span>
+<span id="L30"><span class="lineNum">      30</span>              : </span>
+<span id="L31"><span class="lineNum">      31</span>              :   // ETH buffer used to fund every seeded account so they can sign transactions on local Anvil.</span>
+<span id="L32"><span class="lineNum">      32</span>              :   uint256 constant GAS_BUFFER = 1 ether;</span>
+<span id="L33"><span class="lineNum">      33</span>              :   uint256 constant BLOCK_ADVANCER_PRIVATE_KEY = 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80;</span>
+<span id="L34"><span class="lineNum">      34</span>              :   uint256 constant ANVIL_ACCOUNT_1_PRIVATE_KEY = 0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d;</span>
+<span id="L35"><span class="lineNum">      35</span>              :   uint256 constant ANVIL_ACCOUNT_2_PRIVATE_KEY = 0x5de4111afa1a4b94908f83103eb1f1706367c2e68ca870fc3fb9a804cdab365a;</span>
+<span id="L36"><span class="lineNum">      36</span>              :   uint256 constant ANVIL_ACCOUNT_3_PRIVATE_KEY = 0x7c852118294e51e653712a81e05800f419141751be58f605c371e15141b007a6;</span>
+<span id="L37"><span class="lineNum">      37</span>              :   uint256 constant ANVIL_ACCOUNT_4_PRIVATE_KEY = 0x47e179ec197488593b187f80a00eb0da91f1b9d0b13f8733639f19c30a34926a;</span>
+<span id="L38"><span class="lineNum">      38</span>              :   uint256 constant ANVIL_ACCOUNT_5_PRIVATE_KEY = 0x8b3a350cf5c34c9194ca85829a2df0ec3153be0318b5e2d3348e872092edffba;</span>
+<span id="L39"><span class="lineNum">      39</span>              :   uint256 constant ANVIL_ACCOUNT_6_PRIVATE_KEY = 0x92db14e403b83dfe3df233f83dfa3a0d7096f21ca9b0d6d6b8d88b2b4ec1564e;</span>
+<span id="L40"><span class="lineNum">      40</span>              :   uint256 constant ANVIL_ACCOUNT_7_PRIVATE_KEY = 0x4bbbf85ce3377467afe5d46f804f221813b2bb87f24d81f60f1fcdbf7cbf4356;</span>
+<span id="L41"><span class="lineNum">      41</span>              :   uint256 constant ANVIL_ACCOUNT_8_PRIVATE_KEY = 0xdbda1821b80551c9d65939329250298aa3472ba22feea921c0cf5d620ea67b97;</span>
+<span id="L42"><span class="lineNum">      42</span>              :   uint256 constant ANVIL_ACCOUNT_9_PRIVATE_KEY = 0x2a871d0798f97d79848a013d4936a73bf4cc922c825d33c1cf7073dff6d409c6;</span>
+<span id="L43"><span class="lineNum">      43</span>              :   // Bond required by GuardianAdministrator / GuardianBondEscrow for guardian applications.</span>
+<span id="L44"><span class="lineNum">      44</span>              :   uint256 constant GUARDIAN_BOND = 100e18;</span>
+<span id="L45"><span class="lineNum">      45</span>              : </span>
+<span id="L46"><span class="lineNum">      46</span>              :   // Economic activity seeded for GenesisBonding and vault deposits.</span>
+<span id="L47"><span class="lineNum">      47</span>              :   uint256 constant INVESTOR1_PRIMARY_GVT_BUY = 50e18;</span>
+<span id="L48"><span class="lineNum">      48</span>              :   uint256 constant INVESTOR2_SECONDARY_GVT_BUY = 30e18;</span>
+<span id="L49"><span class="lineNum">      49</span>              :   uint256 constant INVESTOR1_PRIMARY_DEPOSIT = 10e18;</span>
+<span id="L50"><span class="lineNum">      50</span>              :   uint256 constant INVESTOR2_PRIMARY_DEPOSIT = 5e18;</span>
+<span id="L51"><span class="lineNum">      51</span>              :   uint256 constant INVESTOR2_SECONDARY_DEPOSIT = 7e18;</span>
+<span id="L52"><span class="lineNum">      52</span>              : </span>
+<span id="L53"><span class="lineNum">      53</span>              :   // Governance balances large enough to comfortably exceed proposal threshold and quorum in local demos.</span>
+<span id="L54"><span class="lineNum">      54</span>              :   uint256 constant GOVERNANCE_ACTOR_MINT = 100_000e18;</span>
+<span id="L55"><span class="lineNum">      55</span>              :   uint256 constant BLOCK_TIME = 12;</span>
+<span id="L56"><span class="lineNum">      56</span>              :   uint8 constant VOTE_AGAINST = 0;</span>
+<span id="L57"><span class="lineNum">      57</span>              :   uint8 constant VOTE_FOR = 1;</span>
+<span id="L58"><span class="lineNum">      58</span>              :   uint48 constant DEFAULT_HEARTBEAT = 1 days;</span>
+<span id="L59"><span class="lineNum">      59</span>              :   uint16 constant DEFAULT_DEPEG_MIN_BPS = 9_900;</span>
+<span id="L60"><span class="lineNum">      60</span>              :   uint16 constant DEFAULT_DEPEG_MAX_BPS = 10_100;</span>
+<span id="L61"><span class="lineNum">      61</span>              : </span>
+<span id="L62"><span class="lineNum">      62</span>              :   bytes32 constant DEFAULT_ADMIN_ROLE = 0x00;</span>
+<span id="L63"><span class="lineNum">      63</span>              :   bytes32 constant PROPOSER_ROLE = keccak256(&quot;PROPOSER_ROLE&quot;);</span>
+<span id="L64"><span class="lineNum">      64</span>              :   bytes32 constant EXECUTOR_ROLE = keccak256(&quot;EXECUTOR_ROLE&quot;);</span>
+<span id="L65"><span class="lineNum">      65</span>              :   bytes32 constant CANCELLER_ROLE = keccak256(&quot;CANCELLER_ROLE&quot;);</span>
+<span id="L66"><span class="lineNum">      66</span>              :   bytes32 constant MINTER_ROLE = keccak256(&quot;MINTER_ROLE&quot;);</span>
+<span id="L67"><span class="lineNum">      67</span>              :   bytes32 constant SWEEP_ROLE = keccak256(&quot;SWEEP_ROLE&quot;);</span>
+<span id="L68"><span class="lineNum">      68</span>              :   bytes32 constant SWEEP_NOT_ASSET_DAO_ROLE = keccak256(&quot;SWEEP_NOT_ASSET_DAO_ROLE&quot;);</span>
+<span id="L69"><span class="lineNum">      69</span>              :   bytes32 constant MANAGER_ROLE = keccak256(&quot;MANAGER_ROLE&quot;);</span>
+<span id="L70"><span class="lineNum">      70</span>              :   bytes32 constant EMERGENCY_ROLE = keccak256(&quot;EMERGENCY_ROLE&quot;);</span>
+<span id="L71"><span class="lineNum">      71</span>              :   bytes32 constant GUARDIAN_ADMINISTRATOR_ROLE = keccak256(&quot;GUARDIAN_ADMINISTRATOR_ROLE&quot;);</span>
+<span id="L72"><span class="lineNum">      72</span>              :   bytes32 constant FACTORY_ROLE = keccak256(&quot;FACTORY_ROLE&quot;);</span>
+<span id="L73"><span class="lineNum">      73</span>              :   bytes32 constant ADAPTER_MANAGER_ROLE = keccak256(&quot;ADAPTER_MANAGER_ROLE&quot;);</span>
+<span id="L74"><span class="lineNum">      74</span>              :   bytes32 constant GUARDIAN_ROLE = keccak256(&quot;GUARDIAN_ROLE&quot;);</span>
+<span id="L75"><span class="lineNum">      75</span>              :   bytes32 constant STRATEGY_EXECUTOR_ROLE = keccak256(&quot;STRATEGY_EXECUTOR_ROLE&quot;);</span>
+<span id="L76"><span class="lineNum">      76</span>              : </span>
+<span id="L77"><span class="lineNum">      77</span>              :   // Generic actor representation used for every seeded account.</span>
+<span id="L78"><span class="lineNum">      78</span>              :   // The label helps traces and logs stay readable during local debugging.</span>
+<span id="L79"><span class="lineNum">      79</span>              :   struct Participant {</span>
+<span id="L80"><span class="lineNum">      80</span>              :     address addr;</span>
+<span id="L81"><span class="lineNum">      81</span>              :     uint256 privateKey;</span>
+<span id="L82"><span class="lineNum">      82</span>              :     string label;</span>
+<span id="L83"><span class="lineNum">      83</span>              :   }</span>
+<span id="L84"><span class="lineNum">      84</span>              : </span>
+<span id="L85"><span class="lineNum">      85</span>              :   // Canonical addresses loaded from deployments/anvil.json.</span>
+<span id="L86"><span class="lineNum">      86</span>              :   // These come from the main deployment flow and are the base dependencies for the seed.</span>
+<span id="L87"><span class="lineNum">      87</span>              :   struct Contracts {</span>
+<span id="L88"><span class="lineNum">      88</span>              :     address timeLock;</span>
+<span id="L89"><span class="lineNum">      89</span>              :     address daoGovernor;</span>
+<span id="L90"><span class="lineNum">      90</span>              :     address guardianAdministrator;</span>
+<span id="L91"><span class="lineNum">      91</span>              :     address guardianBondEscrow;</span>
+<span id="L92"><span class="lineNum">      92</span>              :     address genesisBonding;</span>
+<span id="L93"><span class="lineNum">      93</span>              :     address vaultFactory;</span>
+<span id="L94"><span class="lineNum">      94</span>              :     address governanceToken;</span>
+<span id="L95"><span class="lineNum">      95</span>              :     address treasury;</span>
+<span id="L96"><span class="lineNum">      96</span>              :     address protocolCore;</span>
+<span id="L97"><span class="lineNum">      97</span>              :     address riskManager;</span>
+<span id="L98"><span class="lineNum">      98</span>              :     address vaultRegistry;</span>
+<span id="L99"><span class="lineNum">      99</span>              :     address strategyRouter;</span>
+<span id="L100"><span class="lineNum">     100</span>              :     address primaryToken;</span>
+<span id="L101"><span class="lineNum">     101</span>              :     address mockV3Aggregator;</span>
+<span id="L102"><span class="lineNum">     102</span>              :   }</span>
+<span id="L103"><span class="lineNum">     103</span>              : </span>
+<span id="L104"><span class="lineNum">     104</span>              :   // Full local cast of accounts used by the seed.</span>
+<span id="L105"><span class="lineNum">     105</span>              :   // We keep groups separated so the resulting state is easier to reason about:</span>
+<span id="L106"><span class="lineNum">     106</span>              :   // guardians, investors and governance-only actors.</span>
+<span id="L107"><span class="lineNum">     107</span>              :   struct Participants {</span>
+<span id="L108"><span class="lineNum">     108</span>              :     Participant guardian1;</span>
+<span id="L109"><span class="lineNum">     109</span>              :     Participant guardian2;</span>
+<span id="L110"><span class="lineNum">     110</span>              :     Participant adminGuardian;</span>
+<span id="L111"><span class="lineNum">     111</span>              :     Participant investor1;</span>
+<span id="L112"><span class="lineNum">     112</span>              :     Participant investor2;</span>
+<span id="L113"><span class="lineNum">     113</span>              :     Participant proposerPending;</span>
+<span id="L114"><span class="lineNum">     114</span>              :     Participant proposerActive;</span>
+<span id="L115"><span class="lineNum">     115</span>              :     Participant proposerCanceled;</span>
+<span id="L116"><span class="lineNum">     116</span>              :     Participant proposerDefeated;</span>
+<span id="L117"><span class="lineNum">     117</span>              :     Participant proposerSucceeded;</span>
+<span id="L118"><span class="lineNum">     118</span>              :     Participant proposerQueued;</span>
+<span id="L119"><span class="lineNum">     119</span>              :     Participant proposerExecuted;</span>
+<span id="L120"><span class="lineNum">     120</span>              :     Participant voter1;</span>
+<span id="L121"><span class="lineNum">     121</span>              :     Participant voter2;</span>
+<span id="L122"><span class="lineNum">     122</span>              :     Participant voter3;</span>
+<span id="L123"><span class="lineNum">     123</span>              :   }</span>
+<span id="L124"><span class="lineNum">     124</span>              : </span>
+<span id="L125"><span class="lineNum">     125</span>              :   // Vault topology generated by the seed.</span>
+<span id="L126"><span class="lineNum">     126</span>              :   struct VaultSeeds {</span>
+<span id="L127"><span class="lineNum">     127</span>              :     address guardian1PrimaryVault;</span>
+<span id="L128"><span class="lineNum">     128</span>              :     address guardian2PrimaryVault;</span>
+<span id="L129"><span class="lineNum">     129</span>              :     address guardian1SecondaryVault;</span>
+<span id="L130"><span class="lineNum">     130</span>              :   }</span>
+<span id="L131"><span class="lineNum">     131</span>              : </span>
+<span id="L132"><span class="lineNum">     132</span>              :   // Proposal ids generated during the seed.</span>
+<span id="L133"><span class="lineNum">     133</span>              :   // We store both guardian onboarding proposals and the governance demo proposals.</span>
+<span id="L134"><span class="lineNum">     134</span>              :   struct ProposalSeeds {</span>
+<span id="L135"><span class="lineNum">     135</span>              :     uint256 guardian1Application;</span>
+<span id="L136"><span class="lineNum">     136</span>              :     uint256 guardian2Application;</span>
+<span id="L137"><span class="lineNum">     137</span>              :     uint256 adminGuardianApplication;</span>
+<span id="L138"><span class="lineNum">     138</span>              :     uint256 governorProposalCountBeforeDemo;</span>
+<span id="L139"><span class="lineNum">     139</span>              :     uint256 governorProposalCountAfterDemo;</span>
+<span id="L140"><span class="lineNum">     140</span>              :     uint256 pending;</span>
+<span id="L141"><span class="lineNum">     141</span>              :     uint256 active;</span>
+<span id="L142"><span class="lineNum">     142</span>              :     uint256 canceled;</span>
+<span id="L143"><span class="lineNum">     143</span>              :     uint256 defeated;</span>
+<span id="L144"><span class="lineNum">     144</span>              :     uint256 succeeded;</span>
+<span id="L145"><span class="lineNum">     145</span>              :     uint256 queued;</span>
+<span id="L146"><span class="lineNum">     146</span>              :     uint256 executed;</span>
+<span id="L147"><span class="lineNum">     147</span>              :   }</span>
+<span id="L148"><span class="lineNum">     148</span>              : </span>
+<span id="L149"><span class="lineNum">     149</span> <span class="tlaUNC tlaBgUNC">           0 :   function run() external {</span></span>
+<span id="L150"><span class="lineNum">     150</span> <span class="tlaUNC">           0 :     require(block.chainid == 31337, &quot;SeedLocal only supports Anvil&quot;);</span></span>
+<span id="L151"><span class="lineNum">     151</span>              : </span>
+<span id="L152"><span class="lineNum">     152</span>              :     // SeedLocal intentionally depends on the output of the deployment step.</span>
+<span id="L153"><span class="lineNum">     153</span> <span class="tlaUNC">           0 :     HelperConfig config = new HelperConfig();</span></span>
+<span id="L154"><span class="lineNum">     154</span> <span class="tlaUNC">           0 :     HelperConfig.NetworkConfig memory networkConfig = config.getActiveNetworkConfig();</span></span>
+<span id="L155"><span class="lineNum">     155</span> <span class="tlaUNC">           0 :     Contracts memory contracts = _loadContracts();</span></span>
+<span id="L156"><span class="lineNum">     156</span> <span class="tlaUNC">           0 :     Participants memory participants = _buildParticipants(vm.envUint(&quot;ADMIN_WALLET_ANVIL_PRIVATE_KEY&quot;));</span></span>
+<span id="L157"><span class="lineNum">     157</span>              : </span>
+<span id="L158"><span class="lineNum">     158</span> <span class="tlaUNC">           0 :     console.log(&quot;========================================&quot;);</span></span>
+<span id="L159"><span class="lineNum">     159</span> <span class="tlaUNC">           0 :     console.log(&quot;Running Local Seed&quot;);</span></span>
+<span id="L160"><span class="lineNum">     160</span> <span class="tlaUNC">           0 :     console.log(&quot;========================================&quot;);</span></span>
+<span id="L161"><span class="lineNum">     161</span>              : </span>
+<span id="L162"><span class="lineNum">     162</span>              :     // 1. Prepare accounts and admin access.</span>
+<span id="L163"><span class="lineNum">     163</span> <span class="tlaUNC">           0 :     _fundParticipants(networkConfig.deployerPrivateKey, participants);</span></span>
+<span id="L164"><span class="lineNum">     164</span> <span class="tlaUNC">           0 :     _grantAdminWalletFullAccess(</span></span>
+<span id="L165"><span class="lineNum">     165</span>              :       networkConfig.deployerPrivateKey,</span>
+<span id="L166"><span class="lineNum">     166</span>              :       participants.adminGuardian.addr,</span>
+<span id="L167"><span class="lineNum">     167</span>              :       contracts.timeLock,</span>
+<span id="L168"><span class="lineNum">     168</span>              :       contracts.governanceToken,</span>
+<span id="L169"><span class="lineNum">     169</span>              :       contracts.treasury,</span>
+<span id="L170"><span class="lineNum">     170</span>              :       contracts.protocolCore,</span>
+<span id="L171"><span class="lineNum">     171</span>              :       contracts.riskManager,</span>
+<span id="L172"><span class="lineNum">     172</span>              :       contracts.guardianAdministrator,</span>
+<span id="L173"><span class="lineNum">     173</span>              :       contracts.guardianBondEscrow,</span>
+<span id="L174"><span class="lineNum">     174</span>              :       contracts.vaultRegistry,</span>
+<span id="L175"><span class="lineNum">     175</span>              :       contracts.strategyRouter,</span>
+<span id="L176"><span class="lineNum">     176</span>              :       contracts.genesisBonding,</span>
+<span id="L177"><span class="lineNum">     177</span>              :       contracts.vaultFactory</span>
+<span id="L178"><span class="lineNum">     178</span>              :     );</span>
+<span id="L179"><span class="lineNum">     179</span> <span class="tlaUNC">           0 :     _grantGovernorTimelockRoles(participants.adminGuardian.privateKey, contracts.timeLock, contracts.daoGovernor);</span></span>
+<span id="L180"><span class="lineNum">     180</span>              : </span>
+<span id="L181"><span class="lineNum">     181</span>              :     // 2. Extend the local asset universe with a second mock token.</span>
+<span id="L182"><span class="lineNum">     182</span> <span class="tlaUNC">           0 :     address secondaryToken = _loadOrDeploySecondaryToken(networkConfig.deployerPrivateKey);</span></span>
+<span id="L183"><span class="lineNum">     183</span> <span class="tlaUNC">           0 :     address usdcToken = _loadOrDeployUsdcToken(networkConfig.deployerPrivateKey);</span></span>
+<span id="L184"><span class="lineNum">     184</span> <span class="tlaUNC">           0 :     _configureAdditionalAssets(participants.adminGuardian.privateKey, contracts, secondaryToken, usdcToken);</span></span>
+<span id="L185"><span class="lineNum">     185</span> <span class="tlaUNC">           0 :     _mintSeedAssets(networkConfig.deployerPrivateKey, contracts, participants, secondaryToken, usdcToken);</span></span>
+<span id="L186"><span class="lineNum">     186</span>              : </span>
+<span id="L187"><span class="lineNum">     187</span>              :     // 3. Activate guardians and create the local vault topology.</span>
+<span id="L188"><span class="lineNum">     188</span> <span class="tlaUNC">           0 :     ProposalSeeds memory proposalSeeds =</span></span>
+<span id="L189"><span class="lineNum">     189</span> <span class="tlaUNC">           0 :       _activateGuardians(networkConfig.deployerPrivateKey, contracts, participants);</span></span>
+<span id="L190"><span class="lineNum">     190</span> <span class="tlaUNC">           0 :     VaultSeeds memory vaultSeeds =</span></span>
+<span id="L191"><span class="lineNum">     191</span> <span class="tlaUNC">           0 :       _createVaults(networkConfig.deployerPrivateKey, contracts, participants, secondaryToken);</span></span>
+<span id="L192"><span class="lineNum">     192</span>              : </span>
+<span id="L193"><span class="lineNum">     193</span>              :     // 4. Seed user activity and governance actors.</span>
+<span id="L194"><span class="lineNum">     194</span> <span class="tlaUNC">           0 :     _seedEconomicActivity(participants, contracts, vaultSeeds, secondaryToken);</span></span>
+<span id="L195"><span class="lineNum">     195</span> <span class="tlaUNC">           0 :     _mintAndDelegateGovernanceActors(participants.adminGuardian.privateKey, contracts.governanceToken, participants);</span></span>
+<span id="L196"><span class="lineNum">     196</span>              : </span>
+<span id="L197"><span class="lineNum">     197</span>              :     // 5. Create demo governance proposals in different observable states.</span>
+<span id="L198"><span class="lineNum">     198</span> <span class="tlaUNC">           0 :     proposalSeeds.governorProposalCountBeforeDemo = DaoGovernor(payable(contracts.daoGovernor)).proposalCount();</span></span>
+<span id="L199"><span class="lineNum">     199</span> <span class="tlaUNC">           0 :     _seedProposalStates(participants, contracts, secondaryToken, proposalSeeds);</span></span>
+<span id="L200"><span class="lineNum">     200</span> <span class="tlaUNC">           0 :     proposalSeeds.governorProposalCountAfterDemo = DaoGovernor(payable(contracts.daoGovernor)).proposalCount();</span></span>
+<span id="L201"><span class="lineNum">     201</span>              : </span>
+<span id="L202"><span class="lineNum">     202</span>              :     // 6. Validate, log and persist the final seeded state.</span>
+<span id="L203"><span class="lineNum">     203</span> <span class="tlaUNC">           0 :     _validateSeed(contracts, participants, vaultSeeds, proposalSeeds, secondaryToken, usdcToken);</span></span>
+<span id="L204"><span class="lineNum">     204</span> <span class="tlaUNC">           0 :     _logSeed(contracts, participants, vaultSeeds, proposalSeeds, secondaryToken, usdcToken);</span></span>
+<span id="L205"><span class="lineNum">     205</span> <span class="tlaUNC">           0 :     _writeSeedJson(contracts, participants, proposalSeeds, secondaryToken, usdcToken);</span></span>
+<span id="L206"><span class="lineNum">     206</span>              :   }</span>
+<span id="L207"><span class="lineNum">     207</span>              : </span>
+<span id="L208"><span class="lineNum">     208</span>              :   // Read every deployed dependency from deployments/anvil.json.</span>
+<span id="L209"><span class="lineNum">     209</span>              :   // This script assumes the deploy step already ran successfully.</span>
+<span id="L210"><span class="lineNum">     210</span> <span class="tlaUNC">           0 :   function _loadContracts() internal view returns (Contracts memory contracts) {</span></span>
+<span id="L211"><span class="lineNum">     211</span>              :     // Load the canonical deployment addresses produced by DeployInvestmentDao.</span>
+<span id="L212"><span class="lineNum">     212</span> <span class="tlaUNC">           0 :     string memory json = vm.readFile(&quot;deployments/anvil.json&quot;);</span></span>
+<span id="L213"><span class="lineNum">     213</span>              : </span>
+<span id="L214"><span class="lineNum">     214</span> <span class="tlaUNC">           0 :     contracts = Contracts({</span></span>
+<span id="L215"><span class="lineNum">     215</span>              :       timeLock: abi.decode(vm.parseJson(json, &quot;.timeLock&quot;), (address)),</span>
+<span id="L216"><span class="lineNum">     216</span>              :       daoGovernor: abi.decode(vm.parseJson(json, &quot;.daoGovernor&quot;), (address)),</span>
+<span id="L217"><span class="lineNum">     217</span>              :       guardianAdministrator: abi.decode(vm.parseJson(json, &quot;.guardianAdministrator&quot;), (address)),</span>
+<span id="L218"><span class="lineNum">     218</span>              :       guardianBondEscrow: abi.decode(vm.parseJson(json, &quot;.guardianBondEscrow&quot;), (address)),</span>
+<span id="L219"><span class="lineNum">     219</span>              :       genesisBonding: abi.decode(vm.parseJson(json, &quot;.genesisBonding&quot;), (address)),</span>
+<span id="L220"><span class="lineNum">     220</span>              :       vaultFactory: abi.decode(vm.parseJson(json, &quot;.vaultFactory&quot;), (address)),</span>
+<span id="L221"><span class="lineNum">     221</span>              :       governanceToken: abi.decode(vm.parseJson(json, &quot;.governanceToken&quot;), (address)),</span>
+<span id="L222"><span class="lineNum">     222</span>              :       treasury: abi.decode(vm.parseJson(json, &quot;.treasury&quot;), (address)),</span>
+<span id="L223"><span class="lineNum">     223</span>              :       protocolCore: abi.decode(vm.parseJson(json, &quot;.protocolCore&quot;), (address)),</span>
+<span id="L224"><span class="lineNum">     224</span>              :       riskManager: abi.decode(vm.parseJson(json, &quot;.riskManager&quot;), (address)),</span>
+<span id="L225"><span class="lineNum">     225</span>              :       vaultRegistry: abi.decode(vm.parseJson(json, &quot;.vaultRegistry&quot;), (address)),</span>
+<span id="L226"><span class="lineNum">     226</span>              :       strategyRouter: abi.decode(vm.parseJson(json, &quot;.strategyRouter&quot;), (address)),</span>
+<span id="L227"><span class="lineNum">     227</span>              :       primaryToken: address(</span>
+<span id="L228"><span class="lineNum">     228</span>              :         GuardianBondEscrow(abi.decode(vm.parseJson(json, &quot;.guardianBondEscrow&quot;), (address)))</span>
+<span id="L229"><span class="lineNum">     229</span>              :           .guardianApplicationToken()</span>
+<span id="L230"><span class="lineNum">     230</span>              :       ),</span>
+<span id="L231"><span class="lineNum">     231</span>              :       mockV3Aggregator: _stringContains(json, &quot;\&quot;mockV3Aggregator\&quot;&quot;)</span>
+<span id="L232"><span class="lineNum">     232</span>              :         ? abi.decode(vm.parseJson(json, &quot;.mockV3Aggregator&quot;), (address))</span>
+<span id="L233"><span class="lineNum">     233</span>              :         : address(0)</span>
+<span id="L234"><span class="lineNum">     234</span>              :     });</span>
+<span id="L235"><span class="lineNum">     235</span>              :   }</span>
+<span id="L236"><span class="lineNum">     236</span>              : </span>
+<span id="L237"><span class="lineNum">     237</span>              :   // Build the complete set of actors used by the seed.</span>
+<span id="L238"><span class="lineNum">     238</span>              :   // The admin guardian is not generated here; it must be the wallet configured in .env</span>
+<span id="L239"><span class="lineNum">     239</span>              :   // so the developer can manually interact with the protocol after seeding.</span>
+<span id="L240"><span class="lineNum">     240</span> <span class="tlaUNC">           0 :   function _buildParticipants(uint256 adminWalletPrivateKey)</span></span>
+<span id="L241"><span class="lineNum">     241</span>              :     internal</span>
+<span id="L242"><span class="lineNum">     242</span>              :     pure</span>
+<span id="L243"><span class="lineNum">     243</span>              :     returns (Participants memory participants)</span>
+<span id="L244"><span class="lineNum">     244</span>              :   {</span>
+<span id="L245"><span class="lineNum">     245</span>              :     // These are the default Anvil accounts. The admin guardian stays on account (0),</span>
+<span id="L246"><span class="lineNum">     246</span>              :     // while the remaining local actors use accounts (1) through (9).</span>
+<span id="L247"><span class="lineNum">     247</span> <span class="tlaUNC">           0 :     participants.guardian1 = _participantFromPrivateKey(ANVIL_ACCOUNT_1_PRIVATE_KEY, &quot;guardian1&quot;);</span></span>
+<span id="L248"><span class="lineNum">     248</span> <span class="tlaUNC">           0 :     participants.guardian2 = _participantFromPrivateKey(ANVIL_ACCOUNT_2_PRIVATE_KEY, &quot;guardian2&quot;);</span></span>
+<span id="L249"><span class="lineNum">     249</span> <span class="tlaUNC">           0 :     participants.adminGuardian = Participant({</span></span>
+<span id="L250"><span class="lineNum">     250</span>              :       addr: vm.addr(adminWalletPrivateKey), privateKey: adminWalletPrivateKey, label: &quot;adminGuardian&quot;</span>
+<span id="L251"><span class="lineNum">     251</span>              :     });</span>
+<span id="L252"><span class="lineNum">     252</span>              : </span>
+<span id="L253"><span class="lineNum">     253</span> <span class="tlaUNC">           0 :     participants.investor1 = _participantFromPrivateKey(ANVIL_ACCOUNT_3_PRIVATE_KEY, &quot;investor1&quot;);</span></span>
+<span id="L254"><span class="lineNum">     254</span> <span class="tlaUNC">           0 :     participants.investor2 = _participantFromPrivateKey(ANVIL_ACCOUNT_4_PRIVATE_KEY, &quot;investor2&quot;);</span></span>
+<span id="L255"><span class="lineNum">     255</span>              : </span>
+<span id="L256"><span class="lineNum">     256</span> <span class="tlaUNC">           0 :     participants.proposerPending = _participantFromPrivateKey(ANVIL_ACCOUNT_5_PRIVATE_KEY, &quot;proposerPending&quot;);</span></span>
+<span id="L257"><span class="lineNum">     257</span> <span class="tlaUNC">           0 :     participants.proposerActive = _participantFromPrivateKey(ANVIL_ACCOUNT_6_PRIVATE_KEY, &quot;proposerActive&quot;);</span></span>
+<span id="L258"><span class="lineNum">     258</span> <span class="tlaUNC">           0 :     participants.proposerCanceled = _participantFromPrivateKey(ANVIL_ACCOUNT_7_PRIVATE_KEY, &quot;proposerCanceled&quot;);</span></span>
+<span id="L259"><span class="lineNum">     259</span> <span class="tlaUNC">           0 :     participants.proposerDefeated = _participantFromPrivateKey(ANVIL_ACCOUNT_8_PRIVATE_KEY, &quot;proposerDefeated&quot;);</span></span>
+<span id="L260"><span class="lineNum">     260</span> <span class="tlaUNC">           0 :     participants.proposerSucceeded = _participantFromPrivateKey(ANVIL_ACCOUNT_5_PRIVATE_KEY, &quot;proposerSucceeded&quot;);</span></span>
+<span id="L261"><span class="lineNum">     261</span> <span class="tlaUNC">           0 :     participants.proposerQueued = _participantFromPrivateKey(ANVIL_ACCOUNT_6_PRIVATE_KEY, &quot;proposerQueued&quot;);</span></span>
+<span id="L262"><span class="lineNum">     262</span> <span class="tlaUNC">           0 :     participants.proposerExecuted = _participantFromPrivateKey(ANVIL_ACCOUNT_7_PRIVATE_KEY, &quot;proposerExecuted&quot;);</span></span>
+<span id="L263"><span class="lineNum">     263</span>              : </span>
+<span id="L264"><span class="lineNum">     264</span> <span class="tlaUNC">           0 :     participants.voter1 = _participantFromPrivateKey(ANVIL_ACCOUNT_8_PRIVATE_KEY, &quot;voter1&quot;);</span></span>
+<span id="L265"><span class="lineNum">     265</span> <span class="tlaUNC">           0 :     participants.voter2 = _participantFromPrivateKey(ANVIL_ACCOUNT_9_PRIVATE_KEY, &quot;voter2&quot;);</span></span>
+<span id="L266"><span class="lineNum">     266</span> <span class="tlaUNC">           0 :     participants.voter3 = _participantFromPrivateKey(ANVIL_ACCOUNT_9_PRIVATE_KEY, &quot;voter3&quot;);</span></span>
+<span id="L267"><span class="lineNum">     267</span>              :   }</span>
+<span id="L268"><span class="lineNum">     268</span>              : </span>
+<span id="L269"><span class="lineNum">     269</span> <span class="tlaUNC">           0 :   function _participantFromPrivateKey(uint256 privateKey, string memory participantLabel)</span></span>
+<span id="L270"><span class="lineNum">     270</span>              :     internal</span>
+<span id="L271"><span class="lineNum">     271</span>              :     pure</span>
+<span id="L272"><span class="lineNum">     272</span>              :     returns (Participant memory participant)</span>
+<span id="L273"><span class="lineNum">     273</span>              :   {</span>
+<span id="L274"><span class="lineNum">     274</span> <span class="tlaUNC">           0 :     participant = Participant({addr: vm.addr(privateKey), privateKey: privateKey, label: participantLabel});</span></span>
+<span id="L275"><span class="lineNum">     275</span>              :   }</span>
+<span id="L276"><span class="lineNum">     276</span>              : </span>
+<span id="L277"><span class="lineNum">     277</span>              :   // Every account that signs transactions later must have ETH first.</span>
+<span id="L278"><span class="lineNum">     278</span>              :   // This avoids random failures when the seed starts broadcasting from many actors.</span>
+<span id="L279"><span class="lineNum">     279</span> <span class="tlaUNC">           0 :   function _fundParticipants(uint256 deployerPrivateKey, Participants memory participants) internal {</span></span>
+<span id="L280"><span class="lineNum">     280</span> <span class="tlaUNC">           0 :     _fundAccount(deployerPrivateKey, participants.adminGuardian.addr, GAS_BUFFER);</span></span>
+<span id="L281"><span class="lineNum">     281</span> <span class="tlaUNC">           0 :     _fundAccount(deployerPrivateKey, participants.guardian1.addr, GAS_BUFFER);</span></span>
+<span id="L282"><span class="lineNum">     282</span> <span class="tlaUNC">           0 :     _fundAccount(deployerPrivateKey, participants.guardian2.addr, GAS_BUFFER);</span></span>
+<span id="L283"><span class="lineNum">     283</span> <span class="tlaUNC">           0 :     _fundAccount(deployerPrivateKey, participants.investor1.addr, GAS_BUFFER);</span></span>
+<span id="L284"><span class="lineNum">     284</span> <span class="tlaUNC">           0 :     _fundAccount(deployerPrivateKey, participants.investor2.addr, GAS_BUFFER);</span></span>
+<span id="L285"><span class="lineNum">     285</span>              : </span>
+<span id="L286"><span class="lineNum">     286</span> <span class="tlaUNC">           0 :     _fundAccount(deployerPrivateKey, participants.proposerPending.addr, GAS_BUFFER);</span></span>
+<span id="L287"><span class="lineNum">     287</span> <span class="tlaUNC">           0 :     _fundAccount(deployerPrivateKey, participants.proposerActive.addr, GAS_BUFFER);</span></span>
+<span id="L288"><span class="lineNum">     288</span> <span class="tlaUNC">           0 :     _fundAccount(deployerPrivateKey, participants.proposerCanceled.addr, GAS_BUFFER);</span></span>
+<span id="L289"><span class="lineNum">     289</span> <span class="tlaUNC">           0 :     _fundAccount(deployerPrivateKey, participants.proposerDefeated.addr, GAS_BUFFER);</span></span>
+<span id="L290"><span class="lineNum">     290</span> <span class="tlaUNC">           0 :     _fundAccount(deployerPrivateKey, participants.proposerSucceeded.addr, GAS_BUFFER);</span></span>
+<span id="L291"><span class="lineNum">     291</span> <span class="tlaUNC">           0 :     _fundAccount(deployerPrivateKey, participants.proposerQueued.addr, GAS_BUFFER);</span></span>
+<span id="L292"><span class="lineNum">     292</span> <span class="tlaUNC">           0 :     _fundAccount(deployerPrivateKey, participants.proposerExecuted.addr, GAS_BUFFER);</span></span>
+<span id="L293"><span class="lineNum">     293</span>              : </span>
+<span id="L294"><span class="lineNum">     294</span> <span class="tlaUNC">           0 :     _fundAccount(deployerPrivateKey, participants.voter1.addr, GAS_BUFFER);</span></span>
+<span id="L295"><span class="lineNum">     295</span> <span class="tlaUNC">           0 :     _fundAccount(deployerPrivateKey, participants.voter2.addr, GAS_BUFFER);</span></span>
+<span id="L296"><span class="lineNum">     296</span> <span class="tlaUNC">           0 :     _fundAccount(deployerPrivateKey, participants.voter3.addr, GAS_BUFFER);</span></span>
+<span id="L297"><span class="lineNum">     297</span>              :   }</span>
+<span id="L298"><span class="lineNum">     298</span>              : </span>
+<span id="L299"><span class="lineNum">     299</span>              :   // Deploy the second local asset used to enrich GenesisBonding and vault coverage.</span>
+<span id="L300"><span class="lineNum">     300</span> <span class="tlaUNC">           0 :   function _loadOrDeploySecondaryToken(uint256 deployerPrivateKey) internal returns (address secondaryToken) {</span></span>
+<span id="L301"><span class="lineNum">     301</span> <span class="tlaUNC">           0 :     if (vm.exists(&quot;deployments/anvil-seed.json&quot;)) {</span></span>
+<span id="L302"><span class="lineNum">     302</span> <span class="tlaUNC">           0 :       string memory seedJson = vm.readFile(&quot;deployments/anvil-seed.json&quot;);</span></span>
+<span id="L303"><span class="lineNum">     303</span> <span class="tlaUNC">           0 :       secondaryToken = abi.decode(vm.parseJson(seedJson, &quot;.secondaryGenesisToken&quot;), (address));</span></span>
+<span id="L304"><span class="lineNum">     304</span>              : </span>
+<span id="L305"><span class="lineNum">     305</span> <span class="tlaUNC">           0 :       if (secondaryToken != address(0) &amp;&amp; secondaryToken.code.length &gt; 0) {</span></span>
+<span id="L306"><span class="lineNum">     306</span> <span class="tlaUNC">           0 :         return secondaryToken;</span></span>
+<span id="L307"><span class="lineNum">     307</span>              :       }</span>
+<span id="L308"><span class="lineNum">     308</span>              :     }</span>
+<span id="L309"><span class="lineNum">     309</span>              : </span>
+<span id="L310"><span class="lineNum">     310</span> <span class="tlaUNC">           0 :     vm.startBroadcast(deployerPrivateKey);</span></span>
+<span id="L311"><span class="lineNum">     311</span> <span class="tlaUNC">           0 :     secondaryToken = address(new MockERC20(&quot;USDTVault&quot;, &quot;USDTV&quot;, 18));</span></span>
+<span id="L312"><span class="lineNum">     312</span> <span class="tlaUNC">           0 :     vm.stopBroadcast();</span></span>
+<span id="L313"><span class="lineNum">     313</span>              :   }</span>
+<span id="L314"><span class="lineNum">     314</span>              : </span>
+<span id="L315"><span class="lineNum">     315</span> <span class="tlaUNC">           0 :   function _loadOrDeployUsdcToken(uint256 deployerPrivateKey) internal returns (address usdcToken) {</span></span>
+<span id="L316"><span class="lineNum">     316</span> <span class="tlaUNC">           0 :     if (vm.exists(&quot;deployments/anvil-seed.json&quot;)) {</span></span>
+<span id="L317"><span class="lineNum">     317</span> <span class="tlaUNC">           0 :       string memory seedJson = vm.readFile(&quot;deployments/anvil-seed.json&quot;);</span></span>
+<span id="L318"><span class="lineNum">     318</span> <span class="tlaUNC">           0 :       if (_stringContains(seedJson, &quot;\&quot;usdcToken\&quot;&quot;)) {</span></span>
+<span id="L319"><span class="lineNum">     319</span> <span class="tlaUNC">           0 :         usdcToken = abi.decode(vm.parseJson(seedJson, &quot;.usdcToken&quot;), (address));</span></span>
+<span id="L320"><span class="lineNum">     320</span>              : </span>
+<span id="L321"><span class="lineNum">     321</span> <span class="tlaUNC">           0 :         if (usdcToken != address(0) &amp;&amp; usdcToken.code.length &gt; 0) {</span></span>
+<span id="L322"><span class="lineNum">     322</span> <span class="tlaUNC">           0 :           return usdcToken;</span></span>
+<span id="L323"><span class="lineNum">     323</span>              :         }</span>
+<span id="L324"><span class="lineNum">     324</span>              :       }</span>
+<span id="L325"><span class="lineNum">     325</span>              :     }</span>
+<span id="L326"><span class="lineNum">     326</span>              : </span>
+<span id="L327"><span class="lineNum">     327</span> <span class="tlaUNC">           0 :     vm.startBroadcast(deployerPrivateKey);</span></span>
+<span id="L328"><span class="lineNum">     328</span> <span class="tlaUNC">           0 :     usdcToken = address(new MockERC20(&quot;USDCTreasury&quot;, &quot;USDC&quot;, 18));</span></span>
+<span id="L329"><span class="lineNum">     329</span> <span class="tlaUNC">           0 :     vm.stopBroadcast();</span></span>
+<span id="L330"><span class="lineNum">     330</span>              :   }</span>
+<span id="L331"><span class="lineNum">     331</span>              : </span>
+<span id="L332"><span class="lineNum">     332</span> <span class="tlaUNC">           0 :   function _stringContains(string memory haystack, string memory needle) internal pure returns (bool) {</span></span>
+<span id="L333"><span class="lineNum">     333</span> <span class="tlaUNC">           0 :     bytes memory haystackBytes = bytes(haystack);</span></span>
+<span id="L334"><span class="lineNum">     334</span> <span class="tlaUNC">           0 :     bytes memory needleBytes = bytes(needle);</span></span>
+<span id="L335"><span class="lineNum">     335</span>              : </span>
+<span id="L336"><span class="lineNum">     336</span> <span class="tlaUNC">           0 :     if (needleBytes.length == 0 || haystackBytes.length &lt; needleBytes.length) {</span></span>
+<span id="L337"><span class="lineNum">     337</span> <span class="tlaUNC">           0 :       return false;</span></span>
+<span id="L338"><span class="lineNum">     338</span>              :     }</span>
+<span id="L339"><span class="lineNum">     339</span>              : </span>
+<span id="L340"><span class="lineNum">     340</span> <span class="tlaUNC">           0 :     for (uint256 i = 0; i &lt;= haystackBytes.length - needleBytes.length; i++) {</span></span>
+<span id="L341"><span class="lineNum">     341</span> <span class="tlaUNC">           0 :       bool match_ = true;</span></span>
+<span id="L342"><span class="lineNum">     342</span> <span class="tlaUNC">           0 :       for (uint256 j = 0; j &lt; needleBytes.length; j++) {</span></span>
+<span id="L343"><span class="lineNum">     343</span> <span class="tlaUNC">           0 :         if (haystackBytes[i + j] != needleBytes[j]) {</span></span>
+<span id="L344"><span class="lineNum">     344</span> <span class="tlaUNC">           0 :           match_ = false;</span></span>
+<span id="L345"><span class="lineNum">     345</span> <span class="tlaUNC">           0 :           break;</span></span>
+<span id="L346"><span class="lineNum">     346</span>              :         }</span>
+<span id="L347"><span class="lineNum">     347</span>              :       }</span>
+<span id="L348"><span class="lineNum">     348</span>              : </span>
+<span id="L349"><span class="lineNum">     349</span> <span class="tlaUNC">           0 :       if (match_) {</span></span>
+<span id="L350"><span class="lineNum">     350</span> <span class="tlaUNC">           0 :         return true;</span></span>
+<span id="L351"><span class="lineNum">     351</span>              :       }</span>
+<span id="L352"><span class="lineNum">     352</span>              :     }</span>
+<span id="L353"><span class="lineNum">     353</span>              : </span>
+<span id="L354"><span class="lineNum">     354</span> <span class="tlaUNC">           0 :     return false;</span></span>
+<span id="L355"><span class="lineNum">     355</span>              :   }</span>
+<span id="L356"><span class="lineNum">     356</span>              : </span>
+<span id="L357"><span class="lineNum">     357</span> <span class="tlaUNC">           0 :   function _configureAdditionalAssets(</span></span>
+<span id="L358"><span class="lineNum">     358</span>              :     uint256 adminWalletPrivateKey,</span>
+<span id="L359"><span class="lineNum">     359</span>              :     Contracts memory contracts,</span>
+<span id="L360"><span class="lineNum">     360</span>              :     address secondaryToken,</span>
+<span id="L361"><span class="lineNum">     361</span>              :     address usdcToken</span>
+<span id="L362"><span class="lineNum">     362</span>              :   ) internal {</span>
+<span id="L363"><span class="lineNum">     363</span>              :     // The second token is enabled everywhere it must be usable in local UX:</span>
+<span id="L364"><span class="lineNum">     364</span>              :     // ProtocolCore genesis tokens, ProtocolCore vault assets and GenesisBonding purchase tokens.</span>
+<span id="L365"><span class="lineNum">     365</span> <span class="tlaUNC">           0 :     address[] memory allowedGenesisTokens = new address[](3);</span></span>
+<span id="L366"><span class="lineNum">     366</span> <span class="tlaUNC">           0 :     allowedGenesisTokens[0] = contracts.primaryToken;</span></span>
+<span id="L367"><span class="lineNum">     367</span> <span class="tlaUNC">           0 :     allowedGenesisTokens[1] = secondaryToken;</span></span>
+<span id="L368"><span class="lineNum">     368</span> <span class="tlaUNC">           0 :     allowedGenesisTokens[2] = usdcToken;</span></span>
+<span id="L369"><span class="lineNum">     369</span>              : </span>
+<span id="L370"><span class="lineNum">     370</span> <span class="tlaUNC">           0 :     vm.startBroadcast(adminWalletPrivateKey);</span></span>
+<span id="L371"><span class="lineNum">     371</span> <span class="tlaUNC">           0 :     address priceFeed = contracts.mockV3Aggregator;</span></span>
+<span id="L372"><span class="lineNum">     372</span> <span class="tlaUNC">           0 :     if (priceFeed == address(0)) {</span></span>
+<span id="L373"><span class="lineNum">     373</span> <span class="tlaUNC">           0 :       priceFeed = address(new MockV3AggregatorLocal(8, 1e8));</span></span>
+<span id="L374"><span class="lineNum">     374</span>              :     }</span>
+<span id="L375"><span class="lineNum">     375</span>              : </span>
+<span id="L376"><span class="lineNum">     376</span> <span class="tlaUNC">           0 :     ProtocolCore(contracts.protocolCore).setSupportedGenesisTokens(allowedGenesisTokens);</span></span>
+<span id="L377"><span class="lineNum">     377</span> <span class="tlaUNC">           0 :     ProtocolCore(contracts.protocolCore).setSupportedVaultAsset(secondaryToken, true);</span></span>
+<span id="L378"><span class="lineNum">     378</span> <span class="tlaUNC">           0 :     GenesisBonding(contracts.genesisBonding).setPurchaseTokens(allowedGenesisTokens);</span></span>
+<span id="L379"><span class="lineNum">     379</span> <span class="tlaUNC">           0 :     RiskManager(contracts.riskManager)</span></span>
+<span id="L380"><span class="lineNum">     380</span>              :       .setAssetConfig(</span>
+<span id="L381"><span class="lineNum">     381</span>              :         contracts.primaryToken,</span>
+<span id="L382"><span class="lineNum">     382</span>              :         priceFeed,</span>
+<span id="L383"><span class="lineNum">     383</span>              :         DEFAULT_HEARTBEAT,</span>
+<span id="L384"><span class="lineNum">     384</span>              :         true,</span>
+<span id="L385"><span class="lineNum">     385</span>              :         DEFAULT_DEPEG_MIN_BPS,</span>
+<span id="L386"><span class="lineNum">     386</span>              :         DEFAULT_DEPEG_MAX_BPS,</span>
+<span id="L387"><span class="lineNum">     387</span>              :         true</span>
+<span id="L388"><span class="lineNum">     388</span>              :       );</span>
+<span id="L389"><span class="lineNum">     389</span> <span class="tlaUNC">           0 :     RiskManager(contracts.riskManager)</span></span>
+<span id="L390"><span class="lineNum">     390</span>              :       .setAssetConfig(</span>
+<span id="L391"><span class="lineNum">     391</span>              :         secondaryToken, priceFeed, DEFAULT_HEARTBEAT, true, DEFAULT_DEPEG_MIN_BPS, DEFAULT_DEPEG_MAX_BPS, true</span>
+<span id="L392"><span class="lineNum">     392</span>              :       );</span>
+<span id="L393"><span class="lineNum">     393</span> <span class="tlaUNC">           0 :     vm.stopBroadcast();</span></span>
+<span id="L394"><span class="lineNum">     394</span>              :   }</span>
+<span id="L395"><span class="lineNum">     395</span>              : </span>
+<span id="L396"><span class="lineNum">     396</span>              :   // Mint the exact balances needed for:</span>
+<span id="L397"><span class="lineNum">     397</span>              :   // - guardian bonds</span>
+<span id="L398"><span class="lineNum">     398</span>              :   // - governance token purchases through GenesisBonding</span>
+<span id="L399"><span class="lineNum">     399</span>              :   // - deposits into the seeded vaults</span>
+<span id="L400"><span class="lineNum">     400</span> <span class="tlaUNC">           0 :   function _mintSeedAssets(</span></span>
+<span id="L401"><span class="lineNum">     401</span>              :     uint256 deployerPrivateKey,</span>
+<span id="L402"><span class="lineNum">     402</span>              :     Contracts memory contracts,</span>
+<span id="L403"><span class="lineNum">     403</span>              :     Participants memory participants,</span>
+<span id="L404"><span class="lineNum">     404</span>              :     address secondaryToken,</span>
+<span id="L405"><span class="lineNum">     405</span>              :     address usdcToken</span>
+<span id="L406"><span class="lineNum">     406</span>              :   ) internal {</span>
+<span id="L407"><span class="lineNum">     407</span> <span class="tlaUNC">           0 :     _mintToken(deployerPrivateKey, contracts.primaryToken, participants.guardian1.addr, GUARDIAN_BOND);</span></span>
+<span id="L408"><span class="lineNum">     408</span> <span class="tlaUNC">           0 :     _mintToken(deployerPrivateKey, contracts.primaryToken, participants.guardian2.addr, GUARDIAN_BOND);</span></span>
+<span id="L409"><span class="lineNum">     409</span> <span class="tlaUNC">           0 :     _mintToken(deployerPrivateKey, contracts.primaryToken, participants.adminGuardian.addr, GUARDIAN_BOND);</span></span>
+<span id="L410"><span class="lineNum">     410</span>              : </span>
+<span id="L411"><span class="lineNum">     411</span> <span class="tlaUNC">           0 :     _mintToken(</span></span>
+<span id="L412"><span class="lineNum">     412</span>              :       deployerPrivateKey,</span>
+<span id="L413"><span class="lineNum">     413</span>              :       contracts.primaryToken,</span>
+<span id="L414"><span class="lineNum">     414</span>              :       participants.investor1.addr,</span>
+<span id="L415"><span class="lineNum">     415</span>              :       INVESTOR1_PRIMARY_GVT_BUY + INVESTOR1_PRIMARY_DEPOSIT</span>
+<span id="L416"><span class="lineNum">     416</span>              :     );</span>
+<span id="L417"><span class="lineNum">     417</span> <span class="tlaUNC">           0 :     _mintToken(deployerPrivateKey, contracts.primaryToken, participants.investor2.addr, INVESTOR2_PRIMARY_DEPOSIT);</span></span>
+<span id="L418"><span class="lineNum">     418</span> <span class="tlaUNC">           0 :     _mintToken(</span></span>
+<span id="L419"><span class="lineNum">     419</span>              :       deployerPrivateKey,</span>
+<span id="L420"><span class="lineNum">     420</span>              :       secondaryToken,</span>
+<span id="L421"><span class="lineNum">     421</span>              :       participants.investor2.addr,</span>
+<span id="L422"><span class="lineNum">     422</span>              :       INVESTOR2_SECONDARY_GVT_BUY + INVESTOR2_SECONDARY_DEPOSIT</span>
+<span id="L423"><span class="lineNum">     423</span>              :     );</span>
+<span id="L424"><span class="lineNum">     424</span>              :     // Seed treasury with the extra mock USDC token so the UI can show a non-linked DAO asset balance.</span>
+<span id="L425"><span class="lineNum">     425</span> <span class="tlaUNC">           0 :     _mintToken(deployerPrivateKey, usdcToken, contracts.treasury, 50e18);</span></span>
+<span id="L426"><span class="lineNum">     426</span>              :   }</span>
+<span id="L427"><span class="lineNum">     427</span>              : </span>
+<span id="L428"><span class="lineNum">     428</span>              :   // Activate all guardians that should exist in the local environment.</span>
+<span id="L429"><span class="lineNum">     429</span>              :   // The returned proposal ids come from GuardianAdministrator onboarding proposals.</span>
+<span id="L430"><span class="lineNum">     430</span> <span class="tlaUNC">           0 :   function _activateGuardians(</span></span>
+<span id="L431"><span class="lineNum">     431</span>              :     uint256 deployerPrivateKey,</span>
+<span id="L432"><span class="lineNum">     432</span>              :     Contracts memory contracts,</span>
+<span id="L433"><span class="lineNum">     433</span>              :     Participants memory participants</span>
+<span id="L434"><span class="lineNum">     434</span>              :   ) internal returns (ProposalSeeds memory proposalSeeds) {</span>
+<span id="L435"><span class="lineNum">     435</span> <span class="tlaUNC">           0 :     proposalSeeds.guardian1Application = _activateGuardian(</span></span>
+<span id="L436"><span class="lineNum">     436</span>              :       deployerPrivateKey,</span>
+<span id="L437"><span class="lineNum">     437</span>              :       participants.guardian1,</span>
+<span id="L438"><span class="lineNum">     438</span>              :       contracts.primaryToken,</span>
+<span id="L439"><span class="lineNum">     439</span>              :       contracts.guardianBondEscrow,</span>
+<span id="L440"><span class="lineNum">     440</span>              :       contracts.guardianAdministrator,</span>
+<span id="L441"><span class="lineNum">     441</span>              :       contracts.timeLock</span>
+<span id="L442"><span class="lineNum">     442</span>              :     );</span>
+<span id="L443"><span class="lineNum">     443</span> <span class="tlaUNC">           0 :     proposalSeeds.guardian2Application = _activateGuardian(</span></span>
+<span id="L444"><span class="lineNum">     444</span>              :       deployerPrivateKey,</span>
+<span id="L445"><span class="lineNum">     445</span>              :       participants.guardian2,</span>
+<span id="L446"><span class="lineNum">     446</span>              :       contracts.primaryToken,</span>
+<span id="L447"><span class="lineNum">     447</span>              :       contracts.guardianBondEscrow,</span>
+<span id="L448"><span class="lineNum">     448</span>              :       contracts.guardianAdministrator,</span>
+<span id="L449"><span class="lineNum">     449</span>              :       contracts.timeLock</span>
+<span id="L450"><span class="lineNum">     450</span>              :     );</span>
+<span id="L451"><span class="lineNum">     451</span> <span class="tlaUNC">           0 :     proposalSeeds.adminGuardianApplication = _activateGuardian(</span></span>
+<span id="L452"><span class="lineNum">     452</span>              :       deployerPrivateKey,</span>
+<span id="L453"><span class="lineNum">     453</span>              :       participants.adminGuardian,</span>
+<span id="L454"><span class="lineNum">     454</span>              :       contracts.primaryToken,</span>
+<span id="L455"><span class="lineNum">     455</span>              :       contracts.guardianBondEscrow,</span>
+<span id="L456"><span class="lineNum">     456</span>              :       contracts.guardianAdministrator,</span>
+<span id="L457"><span class="lineNum">     457</span>              :       contracts.timeLock</span>
+<span id="L458"><span class="lineNum">     458</span>              :     );</span>
+<span id="L459"><span class="lineNum">     459</span>              :   }</span>
+<span id="L460"><span class="lineNum">     460</span>              : </span>
+<span id="L461"><span class="lineNum">     461</span> <span class="tlaUNC">           0 :   function _activateGuardian(</span></span>
+<span id="L462"><span class="lineNum">     462</span>              :     uint256 deployerPrivateKey,</span>
+<span id="L463"><span class="lineNum">     463</span>              :     Participant memory guardian,</span>
+<span id="L464"><span class="lineNum">     464</span>              :     address bondToken,</span>
+<span id="L465"><span class="lineNum">     465</span>              :     address guardianBondEscrow,</span>
+<span id="L466"><span class="lineNum">     466</span>              :     address guardianAdministrator,</span>
+<span id="L467"><span class="lineNum">     467</span>              :     address timeLock</span>
+<span id="L468"><span class="lineNum">     468</span>              :   ) internal returns (uint256 proposalId) {</span>
+<span id="L469"><span class="lineNum">     469</span> <span class="tlaUNC">           0 :     GuardianAdministrator administrator = GuardianAdministrator(guardianAdministrator);</span></span>
+<span id="L470"><span class="lineNum">     470</span>              : </span>
+<span id="L471"><span class="lineNum">     471</span> <span class="tlaUNC">           0 :     if (administrator.isActiveGuardian(guardian.addr)) {</span></span>
+<span id="L472"><span class="lineNum">     472</span> <span class="tlaUNC">           0 :       return administrator.getGuardianDetail(guardian.addr).proposalId;</span></span>
+<span id="L473"><span class="lineNum">     473</span>              :     }</span>
+<span id="L474"><span class="lineNum">     474</span>              : </span>
+<span id="L475"><span class="lineNum">     475</span> <span class="tlaUNC">           0 :     try administrator.getGuardianDetail(guardian.addr) returns (</span></span>
+<span id="L476"><span class="lineNum">     476</span>              :       GuardianAdministrator.GuardianDetail memory detail</span>
+<span id="L477"><span class="lineNum">     477</span>              :     ) {</span>
+<span id="L478"><span class="lineNum">     478</span> <span class="tlaUNC">           0 :       proposalId = detail.proposalId;</span></span>
+<span id="L479"><span class="lineNum">     479</span>              : </span>
+<span id="L480"><span class="lineNum">     480</span> <span class="tlaUNC">           0 :       if (detail.status == GuardianAdministrator.Status.Pending) {</span></span>
+<span id="L481"><span class="lineNum">     481</span> <span class="tlaUNC">           0 :         _approveGuardianViaTimelock(deployerPrivateKey, guardian.addr, guardianAdministrator, timeLock);</span></span>
+<span id="L482"><span class="lineNum">     482</span> <span class="tlaUNC">           0 :         return proposalId;</span></span>
+<span id="L483"><span class="lineNum">     483</span>              :       }</span>
+<span id="L484"><span class="lineNum">     484</span>              : </span>
+<span id="L485"><span class="lineNum">     485</span> <span class="tlaUNC">           0 :       revert(&quot;SeedLocal unsupported guardian state&quot;);</span></span>
+<span id="L486"><span class="lineNum">     486</span>              :     } catch {</span>
+<span id="L487"><span class="lineNum">     487</span>              :       // No existing guardian record. Continue with the fresh application flow below.</span>
+<span id="L488"><span class="lineNum">     488</span>              :     }</span>
+<span id="L489"><span class="lineNum">     489</span>              : </span>
+<span id="L490"><span class="lineNum">     490</span>              :     // Governor snapshots past votes, so we move one block before each guardian application.</span>
+<span id="L491"><span class="lineNum">     491</span> <span class="tlaUNC">           0 :     _advanceBlocks(1);</span></span>
+<span id="L492"><span class="lineNum">     492</span>              : </span>
+<span id="L493"><span class="lineNum">     493</span> <span class="tlaUNC">           0 :     vm.startBroadcast(guardian.privateKey);</span></span>
+<span id="L494"><span class="lineNum">     494</span> <span class="tlaUNC">           0 :     MockERC20(bondToken).approve(guardianBondEscrow, GUARDIAN_BOND);</span></span>
+<span id="L495"><span class="lineNum">     495</span> <span class="tlaUNC">           0 :     administrator.applyGuardian();</span></span>
+<span id="L496"><span class="lineNum">     496</span> <span class="tlaUNC">           0 :     vm.stopBroadcast();</span></span>
+<span id="L497"><span class="lineNum">     497</span>              : </span>
+<span id="L498"><span class="lineNum">     498</span>              :     // GuardianAdministrator stores the onboarding proposal generated by applyGuardian().</span>
+<span id="L499"><span class="lineNum">     499</span> <span class="tlaUNC">           0 :     proposalId = administrator.getGuardianDetail(guardian.addr).proposalId;</span></span>
+<span id="L500"><span class="lineNum">     500</span>              : </span>
+<span id="L501"><span class="lineNum">     501</span> <span class="tlaUNC">           0 :     _approveGuardianViaTimelock(deployerPrivateKey, guardian.addr, guardianAdministrator, timeLock);</span></span>
+<span id="L502"><span class="lineNum">     502</span>              :   }</span>
+<span id="L503"><span class="lineNum">     503</span>              : </span>
+<span id="L504"><span class="lineNum">     504</span> <span class="tlaUNC">           0 :   function _approveGuardianViaTimelock(</span></span>
+<span id="L505"><span class="lineNum">     505</span>              :     uint256 deployerPrivateKey,</span>
+<span id="L506"><span class="lineNum">     506</span>              :     address guardian,</span>
+<span id="L507"><span class="lineNum">     507</span>              :     address guardianAdministrator,</span>
+<span id="L508"><span class="lineNum">     508</span>              :     address timeLock</span>
+<span id="L509"><span class="lineNum">     509</span>              :   ) internal {</span>
+<span id="L510"><span class="lineNum">     510</span> <span class="tlaUNC">           0 :     bytes32 salt = keccak256(abi.encodePacked(&quot;seed-local-guardian-approve&quot;, guardian));</span></span>
+<span id="L511"><span class="lineNum">     511</span> <span class="tlaUNC">           0 :     bytes memory data = abi.encodeCall(GuardianAdministrator.guardianApprove, (guardian));</span></span>
+<span id="L512"><span class="lineNum">     512</span> <span class="tlaUNC">           0 :     bytes32 predecessor = bytes32(0);</span></span>
+<span id="L513"><span class="lineNum">     513</span>              : </span>
+<span id="L514"><span class="lineNum">     514</span> <span class="tlaUNC">           0 :     vm.startBroadcast(deployerPrivateKey);</span></span>
+<span id="L515"><span class="lineNum">     515</span> <span class="tlaUNC">           0 :     TimeLock(payable(timeLock))</span></span>
+<span id="L516"><span class="lineNum">     516</span>              :       .schedule(guardianAdministrator, 0, data, predecessor, salt, TimeLock(payable(timeLock)).getMinDelay());</span>
+<span id="L517"><span class="lineNum">     517</span> <span class="tlaUNC">           0 :     TimeLock(payable(timeLock)).execute(guardianAdministrator, 0, data, predecessor, salt);</span></span>
+<span id="L518"><span class="lineNum">     518</span> <span class="tlaUNC">           0 :     vm.stopBroadcast();</span></span>
+<span id="L519"><span class="lineNum">     519</span>              :   }</span>
+<span id="L520"><span class="lineNum">     520</span>              : </span>
+<span id="L521"><span class="lineNum">     521</span>              :   // Create the final vault layout and then grant the local admin wallet broad control</span>
+<span id="L522"><span class="lineNum">     522</span>              :   // over each created vault so frontend/manual testing is not blocked by permissions.</span>
+<span id="L523"><span class="lineNum">     523</span> <span class="tlaUNC">           0 :   function _createVaults(</span></span>
+<span id="L524"><span class="lineNum">     524</span>              :     uint256 deployerPrivateKey,</span>
+<span id="L525"><span class="lineNum">     525</span>              :     Contracts memory contracts,</span>
+<span id="L526"><span class="lineNum">     526</span>              :     Participants memory participants,</span>
+<span id="L527"><span class="lineNum">     527</span>              :     address secondaryToken</span>
+<span id="L528"><span class="lineNum">     528</span>              :   ) internal returns (VaultSeeds memory vaultSeeds) {</span>
+<span id="L529"><span class="lineNum">     529</span>              :     // Final vault layout:</span>
+<span id="L530"><span class="lineNum">     530</span>              :     // - guardian1: primary + secondary asset vaults</span>
+<span id="L531"><span class="lineNum">     531</span>              :     // - guardian2: primary asset vault</span>
+<span id="L532"><span class="lineNum">     532</span>              :     // - admin guardian: no vault</span>
+<span id="L533"><span class="lineNum">     533</span> <span class="tlaUNC">           0 :     vaultSeeds.guardian1PrimaryVault = _createVault(</span></span>
+<span id="L534"><span class="lineNum">     534</span>              :       participants.guardian1.privateKey,</span>
+<span id="L535"><span class="lineNum">     535</span>              :       contracts.vaultFactory,</span>
+<span id="L536"><span class="lineNum">     536</span>              :       contracts.vaultRegistry,</span>
+<span id="L537"><span class="lineNum">     537</span>              :       participants.guardian1.addr,</span>
+<span id="L538"><span class="lineNum">     538</span>              :       contracts.primaryToken,</span>
+<span id="L539"><span class="lineNum">     539</span>              :       &quot;Seed Guardian1 Primary Vault&quot;,</span>
+<span id="L540"><span class="lineNum">     540</span>              :       &quot;sg1P&quot;</span>
+<span id="L541"><span class="lineNum">     541</span>              :     );</span>
+<span id="L542"><span class="lineNum">     542</span> <span class="tlaUNC">           0 :     vaultSeeds.guardian2PrimaryVault = _createVault(</span></span>
+<span id="L543"><span class="lineNum">     543</span>              :       participants.guardian2.privateKey,</span>
+<span id="L544"><span class="lineNum">     544</span>              :       contracts.vaultFactory,</span>
+<span id="L545"><span class="lineNum">     545</span>              :       contracts.vaultRegistry,</span>
+<span id="L546"><span class="lineNum">     546</span>              :       participants.guardian2.addr,</span>
+<span id="L547"><span class="lineNum">     547</span>              :       contracts.primaryToken,</span>
+<span id="L548"><span class="lineNum">     548</span>              :       &quot;Seed Guardian2 Primary Vault&quot;,</span>
+<span id="L549"><span class="lineNum">     549</span>              :       &quot;sg2P&quot;</span>
+<span id="L550"><span class="lineNum">     550</span>              :     );</span>
+<span id="L551"><span class="lineNum">     551</span> <span class="tlaUNC">           0 :     vaultSeeds.guardian1SecondaryVault = _createVault(</span></span>
+<span id="L552"><span class="lineNum">     552</span>              :       participants.guardian1.privateKey,</span>
+<span id="L553"><span class="lineNum">     553</span>              :       contracts.vaultFactory,</span>
+<span id="L554"><span class="lineNum">     554</span>              :       contracts.vaultRegistry,</span>
+<span id="L555"><span class="lineNum">     555</span>              :       participants.guardian1.addr,</span>
+<span id="L556"><span class="lineNum">     556</span>              :       secondaryToken,</span>
+<span id="L557"><span class="lineNum">     557</span>              :       &quot;Seed Guardian1 Secondary Vault&quot;,</span>
+<span id="L558"><span class="lineNum">     558</span>              :       &quot;sg1S&quot;</span>
+<span id="L559"><span class="lineNum">     559</span>              :     );</span>
+<span id="L560"><span class="lineNum">     560</span>              : </span>
+<span id="L561"><span class="lineNum">     561</span> <span class="tlaUNC">           0 :     _grantVaultRolesToAdmin(</span></span>
+<span id="L562"><span class="lineNum">     562</span>              :       deployerPrivateKey, contracts.timeLock, vaultSeeds.guardian1PrimaryVault, participants.adminGuardian.addr</span>
+<span id="L563"><span class="lineNum">     563</span>              :     );</span>
+<span id="L564"><span class="lineNum">     564</span> <span class="tlaUNC">           0 :     _grantVaultRolesToAdmin(</span></span>
+<span id="L565"><span class="lineNum">     565</span>              :       deployerPrivateKey, contracts.timeLock, vaultSeeds.guardian2PrimaryVault, participants.adminGuardian.addr</span>
+<span id="L566"><span class="lineNum">     566</span>              :     );</span>
+<span id="L567"><span class="lineNum">     567</span> <span class="tlaUNC">           0 :     _grantVaultRolesToAdmin(</span></span>
+<span id="L568"><span class="lineNum">     568</span>              :       deployerPrivateKey, contracts.timeLock, vaultSeeds.guardian1SecondaryVault, participants.adminGuardian.addr</span>
+<span id="L569"><span class="lineNum">     569</span>              :     );</span>
+<span id="L570"><span class="lineNum">     570</span>              :   }</span>
+<span id="L571"><span class="lineNum">     571</span>              : </span>
+<span id="L572"><span class="lineNum">     572</span> <span class="tlaUNC">           0 :   function _createVault(</span></span>
+<span id="L573"><span class="lineNum">     573</span>              :     uint256 guardianPrivateKey,</span>
+<span id="L574"><span class="lineNum">     574</span>              :     address vaultFactory,</span>
+<span id="L575"><span class="lineNum">     575</span>              :     address vaultRegistry,</span>
+<span id="L576"><span class="lineNum">     576</span>              :     address guardian,</span>
+<span id="L577"><span class="lineNum">     577</span>              :     address asset,</span>
+<span id="L578"><span class="lineNum">     578</span>              :     string memory name,</span>
+<span id="L579"><span class="lineNum">     579</span>              :     string memory symbol</span>
+<span id="L580"><span class="lineNum">     580</span>              :   ) internal returns (address vault) {</span>
+<span id="L581"><span class="lineNum">     581</span> <span class="tlaUNC">           0 :     vault = VaultRegistry(vaultRegistry).getVaultByAssetAndGuardian(asset, guardian);</span></span>
+<span id="L582"><span class="lineNum">     582</span> <span class="tlaUNC">           0 :     if (vault != address(0)) {</span></span>
+<span id="L583"><span class="lineNum">     583</span> <span class="tlaUNC">           0 :       return vault;</span></span>
+<span id="L584"><span class="lineNum">     584</span>              :     }</span>
+<span id="L585"><span class="lineNum">     585</span>              : </span>
+<span id="L586"><span class="lineNum">     586</span> <span class="tlaUNC">           0 :     vm.startBroadcast(guardianPrivateKey);</span></span>
+<span id="L587"><span class="lineNum">     587</span> <span class="tlaUNC">           0 :     (vault,) = VaultFactory(vaultFactory).createVault(asset, name, symbol);</span></span>
+<span id="L588"><span class="lineNum">     588</span> <span class="tlaUNC">           0 :     vm.stopBroadcast();</span></span>
+<span id="L589"><span class="lineNum">     589</span>              :   }</span>
+<span id="L590"><span class="lineNum">     590</span>              : </span>
+<span id="L591"><span class="lineNum">     591</span>              :   // Generate visible economic activity so the local app has balances, deposits and</span>
+<span id="L592"><span class="lineNum">     592</span>              :   // user behavior to display immediately after seeding.</span>
+<span id="L593"><span class="lineNum">     593</span> <span class="tlaUNC">           0 :   function _seedEconomicActivity(</span></span>
+<span id="L594"><span class="lineNum">     594</span>              :     Participants memory participants,</span>
+<span id="L595"><span class="lineNum">     595</span>              :     Contracts memory contracts,</span>
+<span id="L596"><span class="lineNum">     596</span>              :     VaultSeeds memory vaultSeeds,</span>
+<span id="L597"><span class="lineNum">     597</span>              :     address secondaryToken</span>
+<span id="L598"><span class="lineNum">     598</span>              :   ) internal {</span>
+<span id="L599"><span class="lineNum">     599</span>              :     // Leave visible balances and vault activity for frontend consumption from the first load.</span>
+<span id="L600"><span class="lineNum">     600</span> <span class="tlaUNC">           0 :     _buyGovernanceForInvestor(</span></span>
+<span id="L601"><span class="lineNum">     601</span>              :       participants.investor1, contracts.primaryToken, contracts.genesisBonding, INVESTOR1_PRIMARY_GVT_BUY</span>
+<span id="L602"><span class="lineNum">     602</span>              :     );</span>
+<span id="L603"><span class="lineNum">     603</span> <span class="tlaUNC">           0 :     _buyGovernanceForInvestor(</span></span>
+<span id="L604"><span class="lineNum">     604</span>              :       participants.investor2, secondaryToken, contracts.genesisBonding, INVESTOR2_SECONDARY_GVT_BUY</span>
+<span id="L605"><span class="lineNum">     605</span>              :     );</span>
+<span id="L606"><span class="lineNum">     606</span>              : </span>
+<span id="L607"><span class="lineNum">     607</span> <span class="tlaUNC">           0 :     _depositToVault(</span></span>
+<span id="L608"><span class="lineNum">     608</span>              :       participants.investor1, contracts.primaryToken, vaultSeeds.guardian1PrimaryVault, INVESTOR1_PRIMARY_DEPOSIT</span>
+<span id="L609"><span class="lineNum">     609</span>              :     );</span>
+<span id="L610"><span class="lineNum">     610</span> <span class="tlaUNC">           0 :     _depositToVault(</span></span>
+<span id="L611"><span class="lineNum">     611</span>              :       participants.investor2, contracts.primaryToken, vaultSeeds.guardian2PrimaryVault, INVESTOR2_PRIMARY_DEPOSIT</span>
+<span id="L612"><span class="lineNum">     612</span>              :     );</span>
+<span id="L613"><span class="lineNum">     613</span> <span class="tlaUNC">           0 :     _depositToVault(</span></span>
+<span id="L614"><span class="lineNum">     614</span>              :       participants.investor2, secondaryToken, vaultSeeds.guardian1SecondaryVault, INVESTOR2_SECONDARY_DEPOSIT</span>
+<span id="L615"><span class="lineNum">     615</span>              :     );</span>
+<span id="L616"><span class="lineNum">     616</span>              :   }</span>
+<span id="L617"><span class="lineNum">     617</span>              : </span>
+<span id="L618"><span class="lineNum">     618</span>              :   // Mint governance voting power to actors dedicated to proposal-state demos.</span>
+<span id="L619"><span class="lineNum">     619</span>              :   // Votes are self-delegated because Governor relies on historical voting checkpoints.</span>
+<span id="L620"><span class="lineNum">     620</span> <span class="tlaUNC">           0 :   function _mintAndDelegateGovernanceActors(</span></span>
+<span id="L621"><span class="lineNum">     621</span>              :     uint256 adminWalletPrivateKey,</span>
+<span id="L622"><span class="lineNum">     622</span>              :     address governanceToken,</span>
+<span id="L623"><span class="lineNum">     623</span>              :     Participants memory participants</span>
+<span id="L624"><span class="lineNum">     624</span>              :   ) internal {</span>
+<span id="L625"><span class="lineNum">     625</span>              :     // These actors are dedicated to proposal-state demos and are kept separate from guardian/investor accounts.</span>
+<span id="L626"><span class="lineNum">     626</span> <span class="tlaUNC">           0 :     vm.startBroadcast(adminWalletPrivateKey);</span></span>
+<span id="L627"><span class="lineNum">     627</span> <span class="tlaUNC">           0 :     GovernanceToken(governanceToken).mint(participants.proposerPending.addr, GOVERNANCE_ACTOR_MINT);</span></span>
+<span id="L628"><span class="lineNum">     628</span> <span class="tlaUNC">           0 :     GovernanceToken(governanceToken).mint(participants.proposerActive.addr, GOVERNANCE_ACTOR_MINT);</span></span>
+<span id="L629"><span class="lineNum">     629</span> <span class="tlaUNC">           0 :     GovernanceToken(governanceToken).mint(participants.proposerCanceled.addr, GOVERNANCE_ACTOR_MINT);</span></span>
+<span id="L630"><span class="lineNum">     630</span> <span class="tlaUNC">           0 :     GovernanceToken(governanceToken).mint(participants.proposerDefeated.addr, GOVERNANCE_ACTOR_MINT);</span></span>
+<span id="L631"><span class="lineNum">     631</span> <span class="tlaUNC">           0 :     GovernanceToken(governanceToken).mint(participants.proposerSucceeded.addr, GOVERNANCE_ACTOR_MINT);</span></span>
+<span id="L632"><span class="lineNum">     632</span> <span class="tlaUNC">           0 :     GovernanceToken(governanceToken).mint(participants.proposerQueued.addr, GOVERNANCE_ACTOR_MINT);</span></span>
+<span id="L633"><span class="lineNum">     633</span> <span class="tlaUNC">           0 :     GovernanceToken(governanceToken).mint(participants.proposerExecuted.addr, GOVERNANCE_ACTOR_MINT);</span></span>
+<span id="L634"><span class="lineNum">     634</span> <span class="tlaUNC">           0 :     GovernanceToken(governanceToken).mint(participants.voter1.addr, GOVERNANCE_ACTOR_MINT);</span></span>
+<span id="L635"><span class="lineNum">     635</span> <span class="tlaUNC">           0 :     GovernanceToken(governanceToken).mint(participants.voter2.addr, GOVERNANCE_ACTOR_MINT);</span></span>
+<span id="L636"><span class="lineNum">     636</span> <span class="tlaUNC">           0 :     GovernanceToken(governanceToken).mint(participants.voter3.addr, GOVERNANCE_ACTOR_MINT);</span></span>
+<span id="L637"><span class="lineNum">     637</span> <span class="tlaUNC">           0 :     vm.stopBroadcast();</span></span>
+<span id="L638"><span class="lineNum">     638</span>              : </span>
+<span id="L639"><span class="lineNum">     639</span> <span class="tlaUNC">           0 :     _delegateVotes(participants.proposerPending, governanceToken);</span></span>
+<span id="L640"><span class="lineNum">     640</span> <span class="tlaUNC">           0 :     _delegateVotes(participants.proposerActive, governanceToken);</span></span>
+<span id="L641"><span class="lineNum">     641</span> <span class="tlaUNC">           0 :     _delegateVotes(participants.proposerCanceled, governanceToken);</span></span>
+<span id="L642"><span class="lineNum">     642</span> <span class="tlaUNC">           0 :     _delegateVotes(participants.proposerDefeated, governanceToken);</span></span>
+<span id="L643"><span class="lineNum">     643</span> <span class="tlaUNC">           0 :     _delegateVotes(participants.proposerSucceeded, governanceToken);</span></span>
+<span id="L644"><span class="lineNum">     644</span> <span class="tlaUNC">           0 :     _delegateVotes(participants.proposerQueued, governanceToken);</span></span>
+<span id="L645"><span class="lineNum">     645</span> <span class="tlaUNC">           0 :     _delegateVotes(participants.proposerExecuted, governanceToken);</span></span>
+<span id="L646"><span class="lineNum">     646</span> <span class="tlaUNC">           0 :     _delegateVotes(participants.voter1, governanceToken);</span></span>
+<span id="L647"><span class="lineNum">     647</span> <span class="tlaUNC">           0 :     _delegateVotes(participants.voter2, governanceToken);</span></span>
+<span id="L648"><span class="lineNum">     648</span> <span class="tlaUNC">           0 :     _delegateVotes(participants.voter3, governanceToken);</span></span>
+<span id="L649"><span class="lineNum">     649</span>              : </span>
+<span id="L650"><span class="lineNum">     650</span> <span class="tlaUNC">           0 :     _advanceBlocks(1);</span></span>
+<span id="L651"><span class="lineNum">     651</span>              :   }</span>
+<span id="L652"><span class="lineNum">     652</span>              : </span>
+<span id="L653"><span class="lineNum">     653</span>              :   // Self-delegation is required for the balance to become usable voting power.</span>
+<span id="L654"><span class="lineNum">     654</span> <span class="tlaUNC">           0 :   function _delegateVotes(Participant memory actor, address governanceToken) internal {</span></span>
+<span id="L655"><span class="lineNum">     655</span> <span class="tlaUNC">           0 :     vm.startBroadcast(actor.privateKey);</span></span>
+<span id="L656"><span class="lineNum">     656</span> <span class="tlaUNC">           0 :     GovernanceToken(governanceToken).delegate(actor.addr);</span></span>
+<span id="L657"><span class="lineNum">     657</span> <span class="tlaUNC">           0 :     vm.stopBroadcast();</span></span>
+<span id="L658"><span class="lineNum">     658</span>              :   }</span>
+<span id="L659"><span class="lineNum">     659</span>              : </span>
+<span id="L660"><span class="lineNum">     660</span>              :   // Create demo proposals that end in different observable states for the frontend.</span>
+<span id="L661"><span class="lineNum">     661</span>              :   // The ordering matters because some states require block advancement while the final</span>
+<span id="L662"><span class="lineNum">     662</span>              :   // pending proposal must remain untouched after creation.</span>
+<span id="L663"><span class="lineNum">     663</span> <span class="tlaUNC">           0 :   function _seedProposalStates(</span></span>
+<span id="L664"><span class="lineNum">     664</span>              :     Participants memory participants,</span>
+<span id="L665"><span class="lineNum">     665</span>              :     Contracts memory contracts,</span>
+<span id="L666"><span class="lineNum">     666</span>              :     address secondaryToken,</span>
+<span id="L667"><span class="lineNum">     667</span>              :     ProposalSeeds memory proposalSeeds</span>
+<span id="L668"><span class="lineNum">     668</span>              :   ) internal {</span>
+<span id="L669"><span class="lineNum">     669</span> <span class="tlaUNC">           0 :     DaoGovernor governor = DaoGovernor(payable(contracts.daoGovernor));</span></span>
+<span id="L670"><span class="lineNum">     670</span>              : </span>
+<span id="L671"><span class="lineNum">     671</span>              :     // All demo proposals use an idempotent call so they can be created, queued and executed safely.</span>
+<span id="L672"><span class="lineNum">     672</span> <span class="tlaUNC">           0 :     proposalSeeds.canceled = _createProposal(</span></span>
+<span id="L673"><span class="lineNum">     673</span>              :       participants.proposerCanceled,</span>
+<span id="L674"><span class="lineNum">     674</span>              :       governor,</span>
+<span id="L675"><span class="lineNum">     675</span>              :       contracts.protocolCore,</span>
+<span id="L676"><span class="lineNum">     676</span>              :       abi.encodeCall(ProtocolCore.setSupportedVaultAsset, (secondaryToken, true)),</span>
+<span id="L677"><span class="lineNum">     677</span>              :       &quot;seed-demo-canceled&quot;</span>
+<span id="L678"><span class="lineNum">     678</span>              :     );</span>
+<span id="L679"><span class="lineNum">     679</span> <span class="tlaUNC">           0 :     _cancelProposal(participants.proposerCanceled, governor, proposalSeeds.canceled);</span></span>
+<span id="L680"><span class="lineNum">     680</span>              : </span>
+<span id="L681"><span class="lineNum">     681</span> <span class="tlaUNC">           0 :     proposalSeeds.defeated = _createProposal(</span></span>
+<span id="L682"><span class="lineNum">     682</span>              :       participants.proposerDefeated,</span>
+<span id="L683"><span class="lineNum">     683</span>              :       governor,</span>
+<span id="L684"><span class="lineNum">     684</span>              :       contracts.protocolCore,</span>
+<span id="L685"><span class="lineNum">     685</span>              :       abi.encodeCall(ProtocolCore.setSupportedVaultAsset, (secondaryToken, true)),</span>
+<span id="L686"><span class="lineNum">     686</span>              :       &quot;seed-demo-defeated&quot;</span>
+<span id="L687"><span class="lineNum">     687</span>              :     );</span>
+<span id="L688"><span class="lineNum">     688</span> <span class="tlaUNC">           0 :     _advanceToActive(governor, proposalSeeds.defeated);</span></span>
+<span id="L689"><span class="lineNum">     689</span> <span class="tlaUNC">           0 :     _advancePastDeadline(governor, proposalSeeds.defeated);</span></span>
+<span id="L690"><span class="lineNum">     690</span>              : </span>
+<span id="L691"><span class="lineNum">     691</span> <span class="tlaUNC">           0 :     proposalSeeds.succeeded = _createProposal(</span></span>
+<span id="L692"><span class="lineNum">     692</span>              :       participants.proposerSucceeded,</span>
+<span id="L693"><span class="lineNum">     693</span>              :       governor,</span>
+<span id="L694"><span class="lineNum">     694</span>              :       contracts.protocolCore,</span>
+<span id="L695"><span class="lineNum">     695</span>              :       abi.encodeCall(ProtocolCore.setSupportedVaultAsset, (secondaryToken, true)),</span>
+<span id="L696"><span class="lineNum">     696</span>              :       &quot;seed-demo-succeeded&quot;</span>
+<span id="L697"><span class="lineNum">     697</span>              :     );</span>
+<span id="L698"><span class="lineNum">     698</span> <span class="tlaUNC">           0 :     _advanceToActive(governor, proposalSeeds.succeeded);</span></span>
+<span id="L699"><span class="lineNum">     699</span> <span class="tlaUNC">           0 :     _vote(participants.proposerSucceeded, governor, proposalSeeds.succeeded, VOTE_FOR, &quot;seed vote for succeeded&quot;);</span></span>
+<span id="L700"><span class="lineNum">     700</span> <span class="tlaUNC">           0 :     _vote(participants.voter1, governor, proposalSeeds.succeeded, VOTE_FOR, &quot;seed vote for succeeded&quot;);</span></span>
+<span id="L701"><span class="lineNum">     701</span> <span class="tlaUNC">           0 :     _advancePastDeadline(governor, proposalSeeds.succeeded);</span></span>
+<span id="L702"><span class="lineNum">     702</span>              : </span>
+<span id="L703"><span class="lineNum">     703</span> <span class="tlaUNC">           0 :     proposalSeeds.queued = _createProposal(</span></span>
+<span id="L704"><span class="lineNum">     704</span>              :       participants.proposerQueued,</span>
+<span id="L705"><span class="lineNum">     705</span>              :       governor,</span>
+<span id="L706"><span class="lineNum">     706</span>              :       contracts.protocolCore,</span>
+<span id="L707"><span class="lineNum">     707</span>              :       abi.encodeCall(ProtocolCore.setSupportedVaultAsset, (secondaryToken, true)),</span>
+<span id="L708"><span class="lineNum">     708</span>              :       &quot;seed-demo-queued&quot;</span>
+<span id="L709"><span class="lineNum">     709</span>              :     );</span>
+<span id="L710"><span class="lineNum">     710</span> <span class="tlaUNC">           0 :     _advanceToActive(governor, proposalSeeds.queued);</span></span>
+<span id="L711"><span class="lineNum">     711</span> <span class="tlaUNC">           0 :     _vote(participants.proposerQueued, governor, proposalSeeds.queued, VOTE_FOR, &quot;seed vote for queued&quot;);</span></span>
+<span id="L712"><span class="lineNum">     712</span> <span class="tlaUNC">           0 :     _vote(participants.voter1, governor, proposalSeeds.queued, VOTE_FOR, &quot;seed vote for queued&quot;);</span></span>
+<span id="L713"><span class="lineNum">     713</span> <span class="tlaUNC">           0 :     _advancePastDeadline(governor, proposalSeeds.queued);</span></span>
+<span id="L714"><span class="lineNum">     714</span> <span class="tlaUNC">           0 :     _queueProposal(participants.proposerQueued, governor, proposalSeeds.queued);</span></span>
+<span id="L715"><span class="lineNum">     715</span>              : </span>
+<span id="L716"><span class="lineNum">     716</span> <span class="tlaUNC">           0 :     proposalSeeds.executed = _createProposal(</span></span>
+<span id="L717"><span class="lineNum">     717</span>              :       participants.proposerExecuted,</span>
+<span id="L718"><span class="lineNum">     718</span>              :       governor,</span>
+<span id="L719"><span class="lineNum">     719</span>              :       contracts.protocolCore,</span>
+<span id="L720"><span class="lineNum">     720</span>              :       abi.encodeCall(ProtocolCore.setSupportedVaultAsset, (secondaryToken, true)),</span>
+<span id="L721"><span class="lineNum">     721</span>              :       &quot;seed-demo-executed&quot;</span>
+<span id="L722"><span class="lineNum">     722</span>              :     );</span>
+<span id="L723"><span class="lineNum">     723</span> <span class="tlaUNC">           0 :     _advanceToActive(governor, proposalSeeds.executed);</span></span>
+<span id="L724"><span class="lineNum">     724</span> <span class="tlaUNC">           0 :     _vote(participants.proposerExecuted, governor, proposalSeeds.executed, VOTE_FOR, &quot;seed vote for executed&quot;);</span></span>
+<span id="L725"><span class="lineNum">     725</span> <span class="tlaUNC">           0 :     _vote(participants.voter1, governor, proposalSeeds.executed, VOTE_FOR, &quot;seed vote for executed&quot;);</span></span>
+<span id="L726"><span class="lineNum">     726</span> <span class="tlaUNC">           0 :     _advancePastDeadline(governor, proposalSeeds.executed);</span></span>
+<span id="L727"><span class="lineNum">     727</span> <span class="tlaUNC">           0 :     _queueProposal(participants.proposerExecuted, governor, proposalSeeds.executed);</span></span>
+<span id="L728"><span class="lineNum">     728</span> <span class="tlaUNC">           0 :     _executeProposal(participants.proposerExecuted, governor, proposalSeeds.executed);</span></span>
+<span id="L729"><span class="lineNum">     729</span>              : </span>
+<span id="L730"><span class="lineNum">     730</span> <span class="tlaUNC">           0 :     proposalSeeds.active = _createProposal(</span></span>
+<span id="L731"><span class="lineNum">     731</span>              :       participants.proposerActive,</span>
+<span id="L732"><span class="lineNum">     732</span>              :       governor,</span>
+<span id="L733"><span class="lineNum">     733</span>              :       contracts.protocolCore,</span>
+<span id="L734"><span class="lineNum">     734</span>              :       abi.encodeCall(ProtocolCore.setSupportedVaultAsset, (secondaryToken, true)),</span>
+<span id="L735"><span class="lineNum">     735</span>              :       &quot;seed-demo-active&quot;</span>
+<span id="L736"><span class="lineNum">     736</span>              :     );</span>
+<span id="L737"><span class="lineNum">     737</span> <span class="tlaUNC">           0 :     _advanceToActive(governor, proposalSeeds.active);</span></span>
+<span id="L738"><span class="lineNum">     738</span> <span class="tlaUNC">           0 :     _vote(participants.proposerActive, governor, proposalSeeds.active, VOTE_FOR, &quot;seed vote for active&quot;);</span></span>
+<span id="L739"><span class="lineNum">     739</span>              : </span>
+<span id="L740"><span class="lineNum">     740</span> <span class="tlaUNC">           0 :     proposalSeeds.pending = _createProposal(</span></span>
+<span id="L741"><span class="lineNum">     741</span>              :       participants.proposerPending,</span>
+<span id="L742"><span class="lineNum">     742</span>              :       governor,</span>
+<span id="L743"><span class="lineNum">     743</span>              :       contracts.protocolCore,</span>
+<span id="L744"><span class="lineNum">     744</span>              :       abi.encodeCall(ProtocolCore.setSupportedVaultAsset, (secondaryToken, true)),</span>
+<span id="L745"><span class="lineNum">     745</span>              :       &quot;seed-demo-pending&quot;</span>
+<span id="L746"><span class="lineNum">     746</span>              :     );</span>
+<span id="L747"><span class="lineNum">     747</span>              :   }</span>
+<span id="L748"><span class="lineNum">     748</span>              : </span>
+<span id="L749"><span class="lineNum">     749</span>              :   // Helper for building a single-target governor proposal.</span>
+<span id="L750"><span class="lineNum">     750</span> <span class="tlaUNC">           0 :   function _createProposal(</span></span>
+<span id="L751"><span class="lineNum">     751</span>              :     Participant memory proposer,</span>
+<span id="L752"><span class="lineNum">     752</span>              :     DaoGovernor governor,</span>
+<span id="L753"><span class="lineNum">     753</span>              :     address target,</span>
+<span id="L754"><span class="lineNum">     754</span>              :     bytes memory callData,</span>
+<span id="L755"><span class="lineNum">     755</span>              :     string memory description</span>
+<span id="L756"><span class="lineNum">     756</span>              :   ) internal returns (uint256 proposalId) {</span>
+<span id="L757"><span class="lineNum">     757</span> <span class="tlaUNC">           0 :     address[] memory targets = new address[](1);</span></span>
+<span id="L758"><span class="lineNum">     758</span> <span class="tlaUNC">           0 :     uint256[] memory values = new uint256[](1);</span></span>
+<span id="L759"><span class="lineNum">     759</span> <span class="tlaUNC">           0 :     bytes[] memory calldatas = new bytes[](1);</span></span>
+<span id="L760"><span class="lineNum">     760</span> <span class="tlaUNC">           0 :     string memory uniqueDescription =</span></span>
+<span id="L761"><span class="lineNum">     761</span> <span class="tlaUNC">           0 :       string.concat(description, &quot;-proposal-count-&quot;, vm.toString(governor.proposalCount()));</span></span>
+<span id="L762"><span class="lineNum">     762</span>              : </span>
+<span id="L763"><span class="lineNum">     763</span> <span class="tlaUNC">           0 :     targets[0] = target;</span></span>
+<span id="L764"><span class="lineNum">     764</span> <span class="tlaUNC">           0 :     values[0] = 0;</span></span>
+<span id="L765"><span class="lineNum">     765</span> <span class="tlaUNC">           0 :     calldatas[0] = callData;</span></span>
+<span id="L766"><span class="lineNum">     766</span>              : </span>
+<span id="L767"><span class="lineNum">     767</span> <span class="tlaUNC">           0 :     vm.startBroadcast(proposer.privateKey);</span></span>
+<span id="L768"><span class="lineNum">     768</span> <span class="tlaUNC">           0 :     proposalId = governor.propose(targets, values, calldatas, uniqueDescription);</span></span>
+<span id="L769"><span class="lineNum">     769</span> <span class="tlaUNC">           0 :     vm.stopBroadcast();</span></span>
+<span id="L770"><span class="lineNum">     770</span>              :   }</span>
+<span id="L771"><span class="lineNum">     771</span>              : </span>
+<span id="L772"><span class="lineNum">     772</span>              :   // Cancel through the proposer path exposed by the current governor implementation.</span>
+<span id="L773"><span class="lineNum">     773</span> <span class="tlaUNC">           0 :   function _cancelProposal(Participant memory proposer, DaoGovernor governor, uint256 proposalId) internal {</span></span>
+<span id="L774"><span class="lineNum">     774</span> <span class="tlaUNC">           0 :     vm.startBroadcast(proposer.privateKey);</span></span>
+<span id="L775"><span class="lineNum">     775</span> <span class="tlaUNC">           0 :     governor.cancel(proposalId);</span></span>
+<span id="L776"><span class="lineNum">     776</span> <span class="tlaUNC">           0 :     vm.stopBroadcast();</span></span>
+<span id="L777"><span class="lineNum">     777</span>              :   }</span>
+<span id="L778"><span class="lineNum">     778</span>              : </span>
+<span id="L779"><span class="lineNum">     779</span>              :   // Queue the proposal in the timelock once it reaches Succeeded.</span>
+<span id="L780"><span class="lineNum">     780</span> <span class="tlaUNC">           0 :   function _queueProposal(Participant memory caller, DaoGovernor governor, uint256 proposalId) internal {</span></span>
+<span id="L781"><span class="lineNum">     781</span> <span class="tlaUNC">           0 :     vm.startBroadcast(caller.privateKey);</span></span>
+<span id="L782"><span class="lineNum">     782</span> <span class="tlaUNC">           0 :     governor.queue(proposalId);</span></span>
+<span id="L783"><span class="lineNum">     783</span> <span class="tlaUNC">           0 :     vm.stopBroadcast();</span></span>
+<span id="L784"><span class="lineNum">     784</span>              :   }</span>
+<span id="L785"><span class="lineNum">     785</span>              : </span>
+<span id="L786"><span class="lineNum">     786</span>              :   // Execute the queued operation through the governor's proposalId-based API.</span>
+<span id="L787"><span class="lineNum">     787</span> <span class="tlaUNC">           0 :   function _executeProposal(Participant memory caller, DaoGovernor governor, uint256 proposalId) internal {</span></span>
+<span id="L788"><span class="lineNum">     788</span> <span class="tlaUNC">           0 :     vm.startBroadcast(caller.privateKey);</span></span>
+<span id="L789"><span class="lineNum">     789</span> <span class="tlaUNC">           0 :     governor.execute(proposalId);</span></span>
+<span id="L790"><span class="lineNum">     790</span> <span class="tlaUNC">           0 :     vm.stopBroadcast();</span></span>
+<span id="L791"><span class="lineNum">     791</span>              :   }</span>
+<span id="L792"><span class="lineNum">     792</span>              : </span>
+<span id="L793"><span class="lineNum">     793</span>              :   // Cast a vote from a specific seeded voter with a readable on-chain reason.</span>
+<span id="L794"><span class="lineNum">     794</span> <span class="tlaUNC">           0 :   function _vote(</span></span>
+<span id="L795"><span class="lineNum">     795</span>              :     Participant memory voter,</span>
+<span id="L796"><span class="lineNum">     796</span>              :     DaoGovernor governor,</span>
+<span id="L797"><span class="lineNum">     797</span>              :     uint256 proposalId,</span>
+<span id="L798"><span class="lineNum">     798</span>              :     uint8 support,</span>
+<span id="L799"><span class="lineNum">     799</span>              :     string memory reason</span>
+<span id="L800"><span class="lineNum">     800</span>              :   ) internal {</span>
+<span id="L801"><span class="lineNum">     801</span> <span class="tlaUNC">           0 :     vm.startBroadcast(voter.privateKey);</span></span>
+<span id="L802"><span class="lineNum">     802</span> <span class="tlaUNC">           0 :     governor.castVoteWithReason(proposalId, support, reason);</span></span>
+<span id="L803"><span class="lineNum">     803</span> <span class="tlaUNC">           0 :     vm.stopBroadcast();</span></span>
+<span id="L804"><span class="lineNum">     804</span>              :   }</span>
+<span id="L805"><span class="lineNum">     805</span>              : </span>
+<span id="L806"><span class="lineNum">     806</span>              :   // Move the local chain until the proposal is actually Active.</span>
+<span id="L807"><span class="lineNum">     807</span> <span class="tlaUNC">           0 :   function _advanceToActive(DaoGovernor governor, uint256 proposalId) internal {</span></span>
+<span id="L808"><span class="lineNum">     808</span>              :     // Governor becomes Active only after the snapshot block has passed.</span>
+<span id="L809"><span class="lineNum">     809</span> <span class="tlaUNC">           0 :     uint256 targetBlock = governor.proposalSnapshot(proposalId) + 1;</span></span>
+<span id="L810"><span class="lineNum">     810</span> <span class="tlaUNC">           0 :     if (block.number &lt; targetBlock) {</span></span>
+<span id="L811"><span class="lineNum">     811</span> <span class="tlaUNC">           0 :       _advanceBlocks(targetBlock - block.number);</span></span>
+<span id="L812"><span class="lineNum">     812</span>              :     }</span>
+<span id="L813"><span class="lineNum">     813</span>              :   }</span>
+<span id="L814"><span class="lineNum">     814</span>              : </span>
+<span id="L815"><span class="lineNum">     815</span>              :   // Move the local chain past the voting deadline so the proposal can settle into</span>
+<span id="L816"><span class="lineNum">     816</span>              :   // Defeated, Succeeded or later states.</span>
+<span id="L817"><span class="lineNum">     817</span> <span class="tlaUNC">           0 :   function _advancePastDeadline(DaoGovernor governor, uint256 proposalId) internal {</span></span>
+<span id="L818"><span class="lineNum">     818</span> <span class="tlaUNC">           0 :     uint256 targetBlock = governor.proposalDeadline(proposalId) + 1;</span></span>
+<span id="L819"><span class="lineNum">     819</span> <span class="tlaUNC">           0 :     if (block.number &lt; targetBlock) {</span></span>
+<span id="L820"><span class="lineNum">     820</span> <span class="tlaUNC">           0 :       _advanceBlocks(targetBlock - block.number);</span></span>
+<span id="L821"><span class="lineNum">     821</span>              :     }</span>
+<span id="L822"><span class="lineNum">     822</span>              :   }</span>
+<span id="L823"><span class="lineNum">     823</span>              : </span>
+<span id="L824"><span class="lineNum">     824</span>              :   // Advance both block number and timestamp to keep local state coherent.</span>
+<span id="L825"><span class="lineNum">     825</span> <span class="tlaUNC">           0 :   function _advanceBlocks(uint256 blocksToAdvance) internal {</span></span>
+<span id="L826"><span class="lineNum">     826</span> <span class="tlaUNC">           0 :     if (blocksToAdvance == 0) {</span></span>
+<span id="L827"><span class="lineNum">     827</span> <span class="tlaUNC">           0 :       return;</span></span>
+<span id="L828"><span class="lineNum">     828</span>              :     }</span>
+<span id="L829"><span class="lineNum">     829</span>              : </span>
+<span id="L830"><span class="lineNum">     830</span>              :     // Mining via RPC can desynchronize Foundry's tx replay from the live node during broadcast.</span>
+<span id="L831"><span class="lineNum">     831</span>              :     // Using real no-op transactions keeps block advancement ordered with the rest of the seed.</span>
+<span id="L832"><span class="lineNum">     832</span> <span class="tlaUNC">           0 :     address blockAdvancer = vm.addr(BLOCK_ADVANCER_PRIVATE_KEY);</span></span>
+<span id="L833"><span class="lineNum">     833</span>              : </span>
+<span id="L834"><span class="lineNum">     834</span> <span class="tlaUNC">           0 :     for (uint256 i = 0; i &lt; blocksToAdvance; i++) {</span></span>
+<span id="L835"><span class="lineNum">     835</span> <span class="tlaUNC">           0 :       vm.startBroadcast(BLOCK_ADVANCER_PRIVATE_KEY);</span></span>
+<span id="L836"><span class="lineNum">     836</span> <span class="tlaUNC">           0 :       (bool ok,) = payable(blockAdvancer).call(&quot;&quot;);</span></span>
+<span id="L837"><span class="lineNum">     837</span> <span class="tlaUNC">           0 :       vm.stopBroadcast();</span></span>
+<span id="L838"><span class="lineNum">     838</span> <span class="tlaUNC">           0 :       require(ok, &quot;Failed to advance block&quot;);</span></span>
+<span id="L839"><span class="lineNum">     839</span>              :     }</span>
+<span id="L840"><span class="lineNum">     840</span>              : </span>
+<span id="L841"><span class="lineNum">     841</span> <span class="tlaUNC">           0 :     vm.roll(block.number + blocksToAdvance);</span></span>
+<span id="L842"><span class="lineNum">     842</span> <span class="tlaUNC">           0 :     vm.warp(block.timestamp + (blocksToAdvance * BLOCK_TIME));</span></span>
+<span id="L843"><span class="lineNum">     843</span>              :   }</span>
+<span id="L844"><span class="lineNum">     844</span>              : </span>
+<span id="L845"><span class="lineNum">     845</span>              :   // Even though the governor exposes queue/execute by proposal id, the underlying timelock</span>
+<span id="L846"><span class="lineNum">     846</span>              :   // still checks proposer/executor/canceller permissions, so we grant them here.</span>
+<span id="L847"><span class="lineNum">     847</span> <span class="tlaUNC">           0 :   function _grantGovernorTimelockRoles(uint256 adminWalletPrivateKey, address timeLock, address daoGovernor)</span></span>
+<span id="L848"><span class="lineNum">     848</span>              :     internal</span>
+<span id="L849"><span class="lineNum">     849</span>              :   {</span>
+<span id="L850"><span class="lineNum">     850</span>              :     // GovernorStorage exposes queue/execute by proposalId, but the governor still needs timelock permissions.</span>
+<span id="L851"><span class="lineNum">     851</span> <span class="tlaUNC">           0 :     vm.startBroadcast(adminWalletPrivateKey);</span></span>
+<span id="L852"><span class="lineNum">     852</span>              : </span>
+<span id="L853"><span class="lineNum">     853</span> <span class="tlaUNC">           0 :     if (!_hasRole(timeLock, PROPOSER_ROLE, daoGovernor)) {</span></span>
+<span id="L854"><span class="lineNum">     854</span> <span class="tlaUNC">           0 :       TimeLock(payable(timeLock)).grantRole(PROPOSER_ROLE, daoGovernor);</span></span>
+<span id="L855"><span class="lineNum">     855</span>              :     }</span>
+<span id="L856"><span class="lineNum">     856</span> <span class="tlaUNC">           0 :     if (!_hasRole(timeLock, EXECUTOR_ROLE, daoGovernor)) {</span></span>
+<span id="L857"><span class="lineNum">     857</span> <span class="tlaUNC">           0 :       TimeLock(payable(timeLock)).grantRole(EXECUTOR_ROLE, daoGovernor);</span></span>
+<span id="L858"><span class="lineNum">     858</span>              :     }</span>
+<span id="L859"><span class="lineNum">     859</span> <span class="tlaUNC">           0 :     if (!_hasRole(timeLock, CANCELLER_ROLE, daoGovernor)) {</span></span>
+<span id="L860"><span class="lineNum">     860</span> <span class="tlaUNC">           0 :       TimeLock(payable(timeLock)).grantRole(CANCELLER_ROLE, daoGovernor);</span></span>
+<span id="L861"><span class="lineNum">     861</span>              :     }</span>
+<span id="L862"><span class="lineNum">     862</span>              : </span>
+<span id="L863"><span class="lineNum">     863</span> <span class="tlaUNC">           0 :     vm.stopBroadcast();</span></span>
+<span id="L864"><span class="lineNum">     864</span>              :   }</span>
+<span id="L865"><span class="lineNum">     865</span>              : </span>
+<span id="L866"><span class="lineNum">     866</span>              :   // This makes ADMIN_WALLET_ANVIL_PRIVATE_KEY the local super-admin across the protocol.</span>
+<span id="L867"><span class="lineNum">     867</span>              :   // The goal is convenience in local development, not production-style least privilege.</span>
+<span id="L868"><span class="lineNum">     868</span> <span class="tlaUNC">           0 :   function _grantAdminWalletFullAccess(</span></span>
+<span id="L869"><span class="lineNum">     869</span>              :     uint256 deployerPrivateKey,</span>
+<span id="L870"><span class="lineNum">     870</span>              :     address adminWallet,</span>
+<span id="L871"><span class="lineNum">     871</span>              :     address timeLock,</span>
+<span id="L872"><span class="lineNum">     872</span>              :     address governanceToken,</span>
+<span id="L873"><span class="lineNum">     873</span>              :     address treasury,</span>
+<span id="L874"><span class="lineNum">     874</span>              :     address protocolCore,</span>
+<span id="L875"><span class="lineNum">     875</span>              :     address riskManager,</span>
+<span id="L876"><span class="lineNum">     876</span>              :     address guardianAdministrator,</span>
+<span id="L877"><span class="lineNum">     877</span>              :     address guardianBondEscrow,</span>
+<span id="L878"><span class="lineNum">     878</span>              :     address vaultRegistry,</span>
+<span id="L879"><span class="lineNum">     879</span>              :     address strategyRouter,</span>
+<span id="L880"><span class="lineNum">     880</span>              :     address genesisBonding,</span>
+<span id="L881"><span class="lineNum">     881</span>              :     address vaultFactory</span>
+<span id="L882"><span class="lineNum">     882</span>              :   ) internal {</span>
+<span id="L883"><span class="lineNum">     883</span>              :     // The admin wallet from .env becomes the local super-admin so manual testing can reach every protected path.</span>
+<span id="L884"><span class="lineNum">     884</span> <span class="tlaUNC">           0 :     _grantRoleViaTimelock(</span></span>
+<span id="L885"><span class="lineNum">     885</span>              :       deployerPrivateKey, timeLock, timeLock, DEFAULT_ADMIN_ROLE, adminWallet, &quot;timelock-default-admin&quot;</span>
+<span id="L886"><span class="lineNum">     886</span>              :     );</span>
+<span id="L887"><span class="lineNum">     887</span> <span class="tlaUNC">           0 :     _grantRoleViaTimelock(deployerPrivateKey, timeLock, timeLock, PROPOSER_ROLE, adminWallet, &quot;timelock-proposer&quot;);</span></span>
+<span id="L888"><span class="lineNum">     888</span> <span class="tlaUNC">           0 :     _grantRoleViaTimelock(deployerPrivateKey, timeLock, timeLock, EXECUTOR_ROLE, adminWallet, &quot;timelock-executor&quot;);</span></span>
+<span id="L889"><span class="lineNum">     889</span> <span class="tlaUNC">           0 :     _grantRoleViaTimelock(deployerPrivateKey, timeLock, timeLock, CANCELLER_ROLE, adminWallet, &quot;timelock-canceller&quot;);</span></span>
+<span id="L890"><span class="lineNum">     890</span>              : </span>
+<span id="L891"><span class="lineNum">     891</span> <span class="tlaUNC">           0 :     _grantRoleViaTimelock(</span></span>
+<span id="L892"><span class="lineNum">     892</span>              :       deployerPrivateKey,</span>
+<span id="L893"><span class="lineNum">     893</span>              :       timeLock,</span>
+<span id="L894"><span class="lineNum">     894</span>              :       governanceToken,</span>
+<span id="L895"><span class="lineNum">     895</span>              :       DEFAULT_ADMIN_ROLE,</span>
+<span id="L896"><span class="lineNum">     896</span>              :       adminWallet,</span>
+<span id="L897"><span class="lineNum">     897</span>              :       &quot;governance-token-default-admin&quot;</span>
+<span id="L898"><span class="lineNum">     898</span>              :     );</span>
+<span id="L899"><span class="lineNum">     899</span> <span class="tlaUNC">           0 :     _grantRoleViaTimelock(</span></span>
+<span id="L900"><span class="lineNum">     900</span>              :       deployerPrivateKey, timeLock, governanceToken, MINTER_ROLE, adminWallet, &quot;governance-token-minter&quot;</span>
+<span id="L901"><span class="lineNum">     901</span>              :     );</span>
+<span id="L902"><span class="lineNum">     902</span>              : </span>
+<span id="L903"><span class="lineNum">     903</span> <span class="tlaUNC">           0 :     _grantRoleViaTimelock(</span></span>
+<span id="L904"><span class="lineNum">     904</span>              :       deployerPrivateKey, timeLock, treasury, DEFAULT_ADMIN_ROLE, adminWallet, &quot;treasury-default-admin&quot;</span>
+<span id="L905"><span class="lineNum">     905</span>              :     );</span>
+<span id="L906"><span class="lineNum">     906</span> <span class="tlaUNC">           0 :     _grantRoleViaTimelock(</span></span>
+<span id="L907"><span class="lineNum">     907</span>              :       deployerPrivateKey,</span>
+<span id="L908"><span class="lineNum">     908</span>              :       timeLock,</span>
+<span id="L909"><span class="lineNum">     909</span>              :       treasury,</span>
+<span id="L910"><span class="lineNum">     910</span>              :       SWEEP_NOT_ASSET_DAO_ROLE,</span>
+<span id="L911"><span class="lineNum">     911</span>              :       adminWallet,</span>
+<span id="L912"><span class="lineNum">     912</span>              :       &quot;treasury-sweep-not-asset-dao&quot;</span>
+<span id="L913"><span class="lineNum">     913</span>              :     );</span>
+<span id="L914"><span class="lineNum">     914</span>              : </span>
+<span id="L915"><span class="lineNum">     915</span> <span class="tlaUNC">           0 :     _grantRoleViaTimelock(</span></span>
+<span id="L916"><span class="lineNum">     916</span>              :       deployerPrivateKey, timeLock, protocolCore, DEFAULT_ADMIN_ROLE, adminWallet, &quot;protocol-core-default-admin&quot;</span>
+<span id="L917"><span class="lineNum">     917</span>              :     );</span>
+<span id="L918"><span class="lineNum">     918</span> <span class="tlaUNC">           0 :     _grantRoleViaTimelock(</span></span>
+<span id="L919"><span class="lineNum">     919</span>              :       deployerPrivateKey, timeLock, protocolCore, MANAGER_ROLE, adminWallet, &quot;protocol-core-manager&quot;</span>
+<span id="L920"><span class="lineNum">     920</span>              :     );</span>
+<span id="L921"><span class="lineNum">     921</span> <span class="tlaUNC">           0 :     _grantRoleViaTimelock(</span></span>
+<span id="L922"><span class="lineNum">     922</span>              :       deployerPrivateKey, timeLock, protocolCore, EMERGENCY_ROLE, adminWallet, &quot;protocol-core-emergency&quot;</span>
+<span id="L923"><span class="lineNum">     923</span>              :     );</span>
+<span id="L924"><span class="lineNum">     924</span>              : </span>
+<span id="L925"><span class="lineNum">     925</span> <span class="tlaUNC">           0 :     _grantRoleViaTimelock(</span></span>
+<span id="L926"><span class="lineNum">     926</span>              :       deployerPrivateKey, timeLock, riskManager, DEFAULT_ADMIN_ROLE, adminWallet, &quot;risk-manager-default-admin&quot;</span>
+<span id="L927"><span class="lineNum">     927</span>              :     );</span>
+<span id="L928"><span class="lineNum">     928</span> <span class="tlaUNC">           0 :     _grantRoleViaTimelock(</span></span>
+<span id="L929"><span class="lineNum">     929</span>              :       deployerPrivateKey, timeLock, riskManager, MANAGER_ROLE, adminWallet, &quot;risk-manager-manager&quot;</span>
+<span id="L930"><span class="lineNum">     930</span>              :     );</span>
+<span id="L931"><span class="lineNum">     931</span> <span class="tlaUNC">           0 :     _grantRoleViaTimelock(</span></span>
+<span id="L932"><span class="lineNum">     932</span>              :       deployerPrivateKey, timeLock, riskManager, EMERGENCY_ROLE, adminWallet, &quot;risk-manager-emergency&quot;</span>
+<span id="L933"><span class="lineNum">     933</span>              :     );</span>
+<span id="L934"><span class="lineNum">     934</span>              : </span>
+<span id="L935"><span class="lineNum">     935</span> <span class="tlaUNC">           0 :     _grantRoleViaTimelock(</span></span>
+<span id="L936"><span class="lineNum">     936</span>              :       deployerPrivateKey,</span>
+<span id="L937"><span class="lineNum">     937</span>              :       timeLock,</span>
+<span id="L938"><span class="lineNum">     938</span>              :       guardianBondEscrow,</span>
+<span id="L939"><span class="lineNum">     939</span>              :       DEFAULT_ADMIN_ROLE,</span>
+<span id="L940"><span class="lineNum">     940</span>              :       adminWallet,</span>
+<span id="L941"><span class="lineNum">     941</span>              :       &quot;guardian-bond-escrow-default-admin&quot;</span>
+<span id="L942"><span class="lineNum">     942</span>              :     );</span>
+<span id="L943"><span class="lineNum">     943</span> <span class="tlaUNC">           0 :     _grantRoleViaTimelock(</span></span>
+<span id="L944"><span class="lineNum">     944</span>              :       deployerPrivateKey,</span>
+<span id="L945"><span class="lineNum">     945</span>              :       timeLock,</span>
+<span id="L946"><span class="lineNum">     946</span>              :       guardianBondEscrow,</span>
+<span id="L947"><span class="lineNum">     947</span>              :       GUARDIAN_ADMINISTRATOR_ROLE,</span>
+<span id="L948"><span class="lineNum">     948</span>              :       adminWallet,</span>
+<span id="L949"><span class="lineNum">     949</span>              :       &quot;guardian-bond-escrow-guardian-admin&quot;</span>
+<span id="L950"><span class="lineNum">     950</span>              :     );</span>
+<span id="L951"><span class="lineNum">     951</span>              : </span>
+<span id="L952"><span class="lineNum">     952</span> <span class="tlaUNC">           0 :     _grantRoleViaTimelock(</span></span>
+<span id="L953"><span class="lineNum">     953</span>              :       deployerPrivateKey, timeLock, vaultRegistry, DEFAULT_ADMIN_ROLE, adminWallet, &quot;vault-registry-default-admin&quot;</span>
+<span id="L954"><span class="lineNum">     954</span>              :     );</span>
+<span id="L955"><span class="lineNum">     955</span> <span class="tlaUNC">           0 :     _grantRoleViaTimelock(</span></span>
+<span id="L956"><span class="lineNum">     956</span>              :       deployerPrivateKey, timeLock, vaultRegistry, FACTORY_ROLE, adminWallet, &quot;vault-registry-factory&quot;</span>
+<span id="L957"><span class="lineNum">     957</span>              :     );</span>
+<span id="L958"><span class="lineNum">     958</span>              : </span>
+<span id="L959"><span class="lineNum">     959</span> <span class="tlaUNC">           0 :     _grantRoleViaTimelock(</span></span>
+<span id="L960"><span class="lineNum">     960</span>              :       deployerPrivateKey,</span>
+<span id="L961"><span class="lineNum">     961</span>              :       timeLock,</span>
+<span id="L962"><span class="lineNum">     962</span>              :       strategyRouter,</span>
+<span id="L963"><span class="lineNum">     963</span>              :       DEFAULT_ADMIN_ROLE,</span>
+<span id="L964"><span class="lineNum">     964</span>              :       adminWallet,</span>
+<span id="L965"><span class="lineNum">     965</span>              :       &quot;strategy-router-default-admin&quot;</span>
+<span id="L966"><span class="lineNum">     966</span>              :     );</span>
+<span id="L967"><span class="lineNum">     967</span> <span class="tlaUNC">           0 :     _grantRoleViaTimelock(</span></span>
+<span id="L968"><span class="lineNum">     968</span>              :       deployerPrivateKey,</span>
+<span id="L969"><span class="lineNum">     969</span>              :       timeLock,</span>
+<span id="L970"><span class="lineNum">     970</span>              :       strategyRouter,</span>
+<span id="L971"><span class="lineNum">     971</span>              :       ADAPTER_MANAGER_ROLE,</span>
+<span id="L972"><span class="lineNum">     972</span>              :       adminWallet,</span>
+<span id="L973"><span class="lineNum">     973</span>              :       &quot;strategy-router-adapter-manager&quot;</span>
+<span id="L974"><span class="lineNum">     974</span>              :     );</span>
+<span id="L975"><span class="lineNum">     975</span>              : </span>
+<span id="L976"><span class="lineNum">     976</span> <span class="tlaUNC">           0 :     _grantRoleViaTimelock(</span></span>
+<span id="L977"><span class="lineNum">     977</span>              :       deployerPrivateKey,</span>
+<span id="L978"><span class="lineNum">     978</span>              :       timeLock,</span>
+<span id="L979"><span class="lineNum">     979</span>              :       genesisBonding,</span>
+<span id="L980"><span class="lineNum">     980</span>              :       DEFAULT_ADMIN_ROLE,</span>
+<span id="L981"><span class="lineNum">     981</span>              :       adminWallet,</span>
+<span id="L982"><span class="lineNum">     982</span>              :       &quot;genesis-bonding-default-admin&quot;</span>
+<span id="L983"><span class="lineNum">     983</span>              :     );</span>
+<span id="L984"><span class="lineNum">     984</span> <span class="tlaUNC">           0 :     _grantRoleViaTimelock(</span></span>
+<span id="L985"><span class="lineNum">     985</span>              :       deployerPrivateKey, timeLock, genesisBonding, SWEEP_ROLE, adminWallet, &quot;genesis-bonding-sweep&quot;</span>
+<span id="L986"><span class="lineNum">     986</span>              :     );</span>
+<span id="L987"><span class="lineNum">     987</span>              : </span>
+<span id="L988"><span class="lineNum">     988</span> <span class="tlaUNC">           0 :     _grantRoleViaTimelock(</span></span>
+<span id="L989"><span class="lineNum">     989</span>              :       deployerPrivateKey, timeLock, vaultFactory, DEFAULT_ADMIN_ROLE, adminWallet, &quot;vault-factory-default-admin&quot;</span>
+<span id="L990"><span class="lineNum">     990</span>              :     );</span>
+<span id="L991"><span class="lineNum">     991</span>              : </span>
+<span id="L992"><span class="lineNum">     992</span> <span class="tlaUNC">           0 :     _checkAdminWalletCoverage(timeLock, guardianAdministrator, adminWallet);</span></span>
+<span id="L993"><span class="lineNum">     993</span>              :   }</span>
+<span id="L994"><span class="lineNum">     994</span>              : </span>
+<span id="L995"><span class="lineNum">     995</span>              :   // Grant broad vault-level permissions to the local admin wallet on every seeded vault.</span>
+<span id="L996"><span class="lineNum">     996</span> <span class="tlaUNC">           0 :   function _grantVaultRolesToAdmin(uint256 deployerPrivateKey, address timeLock, address vault, address adminWallet)</span></span>
+<span id="L997"><span class="lineNum">     997</span>              :     internal</span>
+<span id="L998"><span class="lineNum">     998</span>              :   {</span>
+<span id="L999"><span class="lineNum">     999</span> <span class="tlaUNC">           0 :     _grantRoleViaTimelock(</span></span>
+<span id="L1000"><span class="lineNum">    1000</span>              :       deployerPrivateKey, timeLock, vault, DEFAULT_ADMIN_ROLE, adminWallet, &quot;vault-default-admin&quot;</span>
+<span id="L1001"><span class="lineNum">    1001</span>              :     );</span>
+<span id="L1002"><span class="lineNum">    1002</span> <span class="tlaUNC">           0 :     _grantRoleViaTimelock(deployerPrivateKey, timeLock, vault, GUARDIAN_ROLE, adminWallet, &quot;vault-guardian&quot;);</span></span>
+<span id="L1003"><span class="lineNum">    1003</span> <span class="tlaUNC">           0 :     _grantRoleViaTimelock(</span></span>
+<span id="L1004"><span class="lineNum">    1004</span>              :       deployerPrivateKey, timeLock, vault, STRATEGY_EXECUTOR_ROLE, adminWallet, &quot;vault-strategy-executor&quot;</span>
+<span id="L1005"><span class="lineNum">    1005</span>              :     );</span>
+<span id="L1006"><span class="lineNum">    1006</span>              :   }</span>
+<span id="L1007"><span class="lineNum">    1007</span>              : </span>
+<span id="L1008"><span class="lineNum">    1008</span>              :   // Schedule a grantRole call through the timelock and execute it immediately in local Anvil.</span>
+<span id="L1009"><span class="lineNum">    1009</span>              :   // The idempotency guard is important because many permissions are already owned by the deployer</span>
+<span id="L1010"><span class="lineNum">    1010</span>              :   // or may have been granted in a previous fresh run design.</span>
+<span id="L1011"><span class="lineNum">    1011</span> <span class="tlaUNC">           0 :   function _grantRoleViaTimelock(</span></span>
+<span id="L1012"><span class="lineNum">    1012</span>              :     uint256 deployerPrivateKey,</span>
+<span id="L1013"><span class="lineNum">    1013</span>              :     address timeLock,</span>
+<span id="L1014"><span class="lineNum">    1014</span>              :     address target,</span>
+<span id="L1015"><span class="lineNum">    1015</span>              :     bytes32 role,</span>
+<span id="L1016"><span class="lineNum">    1016</span>              :     address account,</span>
+<span id="L1017"><span class="lineNum">    1017</span>              :     string memory saltLabel</span>
+<span id="L1018"><span class="lineNum">    1018</span>              :   ) internal {</span>
+<span id="L1019"><span class="lineNum">    1019</span>              :     // Role grants are idempotent so rerunning against a fresh Anvil deployment is safe.</span>
+<span id="L1020"><span class="lineNum">    1020</span> <span class="tlaUNC">           0 :     if (_hasRole(target, role, account)) {</span></span>
+<span id="L1021"><span class="lineNum">    1021</span> <span class="tlaUNC">           0 :       return;</span></span>
+<span id="L1022"><span class="lineNum">    1022</span>              :     }</span>
+<span id="L1023"><span class="lineNum">    1023</span>              : </span>
+<span id="L1024"><span class="lineNum">    1024</span> <span class="tlaUNC">           0 :     bytes memory data = abi.encodeWithSignature(&quot;grantRole(bytes32,address)&quot;, role, account);</span></span>
+<span id="L1025"><span class="lineNum">    1025</span> <span class="tlaUNC">           0 :     _scheduleAndExecuteTimelockCall(</span></span>
+<span id="L1026"><span class="lineNum">    1026</span>              :       deployerPrivateKey,</span>
+<span id="L1027"><span class="lineNum">    1027</span>              :       timeLock,</span>
+<span id="L1028"><span class="lineNum">    1028</span>              :       target,</span>
+<span id="L1029"><span class="lineNum">    1029</span>              :       data,</span>
+<span id="L1030"><span class="lineNum">    1030</span>              :       keccak256(abi.encodePacked(&quot;seed-local-role&quot;, saltLabel, target, role, account))</span>
+<span id="L1031"><span class="lineNum">    1031</span>              :     );</span>
+<span id="L1032"><span class="lineNum">    1032</span>              :   }</span>
+<span id="L1033"><span class="lineNum">    1033</span>              : </span>
+<span id="L1034"><span class="lineNum">    1034</span>              :   // Shared helper for timelock-controlled configuration changes.</span>
+<span id="L1035"><span class="lineNum">    1035</span> <span class="tlaUNC">           0 :   function _scheduleAndExecuteTimelockCall(</span></span>
+<span id="L1036"><span class="lineNum">    1036</span>              :     uint256 deployerPrivateKey,</span>
+<span id="L1037"><span class="lineNum">    1037</span>              :     address timeLock,</span>
+<span id="L1038"><span class="lineNum">    1038</span>              :     address target,</span>
+<span id="L1039"><span class="lineNum">    1039</span>              :     bytes memory data,</span>
+<span id="L1040"><span class="lineNum">    1040</span>              :     bytes32 salt</span>
+<span id="L1041"><span class="lineNum">    1041</span>              :   ) internal {</span>
+<span id="L1042"><span class="lineNum">    1042</span>              :     // In local Anvil the timelock delay is zero, so we can schedule and execute in the same seed transaction flow.</span>
+<span id="L1043"><span class="lineNum">    1043</span> <span class="tlaUNC">           0 :     bytes32 predecessor = bytes32(0);</span></span>
+<span id="L1044"><span class="lineNum">    1044</span> <span class="tlaUNC">           0 :     uint256 minDelay = TimeLock(payable(timeLock)).getMinDelay();</span></span>
+<span id="L1045"><span class="lineNum">    1045</span>              : </span>
+<span id="L1046"><span class="lineNum">    1046</span> <span class="tlaUNC">           0 :     vm.startBroadcast(deployerPrivateKey);</span></span>
+<span id="L1047"><span class="lineNum">    1047</span> <span class="tlaUNC">           0 :     TimeLock(payable(timeLock)).schedule(target, 0, data, predecessor, salt, minDelay);</span></span>
+<span id="L1048"><span class="lineNum">    1048</span> <span class="tlaUNC">           0 :     TimeLock(payable(timeLock)).execute(target, 0, data, predecessor, salt);</span></span>
+<span id="L1049"><span class="lineNum">    1049</span> <span class="tlaUNC">           0 :     vm.stopBroadcast();</span></span>
+<span id="L1050"><span class="lineNum">    1050</span>              :   }</span>
+<span id="L1051"><span class="lineNum">    1051</span>              : </span>
+<span id="L1052"><span class="lineNum">    1052</span>              :   // AccessControl-compatible role probe used across many protocol contracts and vaults.</span>
+<span id="L1053"><span class="lineNum">    1053</span> <span class="tlaUNC">           0 :   function _hasRole(address target, bytes32 role, address account) internal view returns (bool hasRole_) {</span></span>
+<span id="L1054"><span class="lineNum">    1054</span> <span class="tlaUNC">           0 :     (bool ok, bytes memory data) =</span></span>
+<span id="L1055"><span class="lineNum">    1055</span> <span class="tlaUNC">           0 :       target.staticcall(abi.encodeWithSignature(&quot;hasRole(bytes32,address)&quot;, role, account));</span></span>
+<span id="L1056"><span class="lineNum">    1056</span>              : </span>
+<span id="L1057"><span class="lineNum">    1057</span> <span class="tlaUNC">           0 :     if (!ok || data.length &lt; 32) {</span></span>
+<span id="L1058"><span class="lineNum">    1058</span> <span class="tlaUNC">           0 :       return false;</span></span>
+<span id="L1059"><span class="lineNum">    1059</span>              :     }</span>
+<span id="L1060"><span class="lineNum">    1060</span>              : </span>
+<span id="L1061"><span class="lineNum">    1061</span> <span class="tlaUNC">           0 :     hasRole_ = abi.decode(data, (bool));</span></span>
+<span id="L1062"><span class="lineNum">    1062</span>              :   }</span>
+<span id="L1063"><span class="lineNum">    1063</span>              : </span>
+<span id="L1064"><span class="lineNum">    1064</span>              :   // Minimal sanity checks for the admin wallet after the role-grant pass.</span>
+<span id="L1065"><span class="lineNum">    1065</span> <span class="tlaUNC">           0 :   function _checkAdminWalletCoverage(address timeLock, address guardianAdministrator, address adminWallet)</span></span>
+<span id="L1066"><span class="lineNum">    1066</span>              :     internal</span>
+<span id="L1067"><span class="lineNum">    1067</span>              :     view</span>
+<span id="L1068"><span class="lineNum">    1068</span>              :   {</span>
+<span id="L1069"><span class="lineNum">    1069</span> <span class="tlaUNC">           0 :     require(_hasRole(timeLock, DEFAULT_ADMIN_ROLE, adminWallet), &quot;Admin wallet missing timelock default admin role&quot;);</span></span>
+<span id="L1070"><span class="lineNum">    1070</span> <span class="tlaUNC">           0 :     require(_hasRole(timeLock, PROPOSER_ROLE, adminWallet), &quot;Admin wallet missing timelock proposer role&quot;);</span></span>
+<span id="L1071"><span class="lineNum">    1071</span> <span class="tlaUNC">           0 :     require(_hasRole(timeLock, EXECUTOR_ROLE, adminWallet), &quot;Admin wallet missing timelock executor role&quot;);</span></span>
+<span id="L1072"><span class="lineNum">    1072</span> <span class="tlaUNC">           0 :     require(_hasRole(timeLock, CANCELLER_ROLE, adminWallet), &quot;Admin wallet missing timelock canceller role&quot;);</span></span>
+<span id="L1073"><span class="lineNum">    1073</span> <span class="tlaUNC">           0 :     require(</span></span>
+<span id="L1074"><span class="lineNum">    1074</span>              :       GuardianAdministrator(guardianAdministrator).timelock() == timeLock,</span>
+<span id="L1075"><span class="lineNum">    1075</span>              :       &quot;GuardianAdministrator timelock mismatch&quot;</span>
+<span id="L1076"><span class="lineNum">    1076</span>              :     );</span>
+<span id="L1077"><span class="lineNum">    1077</span>              :   }</span>
+<span id="L1078"><span class="lineNum">    1078</span>              : </span>
+<span id="L1079"><span class="lineNum">    1079</span>              :   // Send ETH from the deployer to a seeded actor.</span>
+<span id="L1080"><span class="lineNum">    1080</span> <span class="tlaUNC">           0 :   function _fundAccount(uint256 deployerPrivateKey, address target, uint256 amount) internal {</span></span>
+<span id="L1081"><span class="lineNum">    1081</span> <span class="tlaUNC">           0 :     vm.startBroadcast(deployerPrivateKey);</span></span>
+<span id="L1082"><span class="lineNum">    1082</span> <span class="tlaUNC">           0 :     (bool ok,) = payable(target).call{value: amount}(&quot;&quot;);</span></span>
+<span id="L1083"><span class="lineNum">    1083</span> <span class="tlaUNC">           0 :     vm.stopBroadcast();</span></span>
+<span id="L1084"><span class="lineNum">    1084</span> <span class="tlaUNC">           0 :     require(ok, &quot;Failed to fund account&quot;);</span></span>
+<span id="L1085"><span class="lineNum">    1085</span>              :   }</span>
+<span id="L1086"><span class="lineNum">    1086</span>              : </span>
+<span id="L1087"><span class="lineNum">    1087</span>              :   // Mint a mock token balance to a target actor.</span>
+<span id="L1088"><span class="lineNum">    1088</span> <span class="tlaUNC">           0 :   function _mintToken(uint256 deployerPrivateKey, address token, address to, uint256 amount) internal {</span></span>
+<span id="L1089"><span class="lineNum">    1089</span> <span class="tlaUNC">           0 :     vm.startBroadcast(deployerPrivateKey);</span></span>
+<span id="L1090"><span class="lineNum">    1090</span> <span class="tlaUNC">           0 :     MockERC20(token).mint(to, amount);</span></span>
+<span id="L1091"><span class="lineNum">    1091</span> <span class="tlaUNC">           0 :     vm.stopBroadcast();</span></span>
+<span id="L1092"><span class="lineNum">    1092</span>              :   }</span>
+<span id="L1093"><span class="lineNum">    1093</span>              : </span>
+<span id="L1094"><span class="lineNum">    1094</span>              :   // Buy governance token through GenesisBonding using the chosen payment token.</span>
+<span id="L1095"><span class="lineNum">    1095</span> <span class="tlaUNC">           0 :   function _buyGovernanceForInvestor(</span></span>
+<span id="L1096"><span class="lineNum">    1096</span>              :     Participant memory investor,</span>
+<span id="L1097"><span class="lineNum">    1097</span>              :     address paymentToken,</span>
+<span id="L1098"><span class="lineNum">    1098</span>              :     address genesisBonding,</span>
+<span id="L1099"><span class="lineNum">    1099</span>              :     uint256 amount</span>
+<span id="L1100"><span class="lineNum">    1100</span>              :   ) internal {</span>
+<span id="L1101"><span class="lineNum">    1101</span> <span class="tlaUNC">           0 :     vm.startBroadcast(investor.privateKey);</span></span>
+<span id="L1102"><span class="lineNum">    1102</span> <span class="tlaUNC">           0 :     MockERC20(paymentToken).approve(genesisBonding, amount);</span></span>
+<span id="L1103"><span class="lineNum">    1103</span> <span class="tlaUNC">           0 :     GenesisBonding(genesisBonding).buy(paymentToken, amount);</span></span>
+<span id="L1104"><span class="lineNum">    1104</span> <span class="tlaUNC">           0 :     vm.stopBroadcast();</span></span>
+<span id="L1105"><span class="lineNum">    1105</span>              :   }</span>
+<span id="L1106"><span class="lineNum">    1106</span>              : </span>
+<span id="L1107"><span class="lineNum">    1107</span>              :   // Deposit the chosen asset into the target ERC4626 vault.</span>
+<span id="L1108"><span class="lineNum">    1108</span> <span class="tlaUNC">           0 :   function _depositToVault(Participant memory investor, address asset, address vault, uint256 amount) internal {</span></span>
+<span id="L1109"><span class="lineNum">    1109</span> <span class="tlaUNC">           0 :     vm.startBroadcast(investor.privateKey);</span></span>
+<span id="L1110"><span class="lineNum">    1110</span> <span class="tlaUNC">           0 :     MockERC20(asset).approve(vault, amount);</span></span>
+<span id="L1111"><span class="lineNum">    1111</span> <span class="tlaUNC">           0 :     IERC4626(vault).deposit(amount, investor.addr);</span></span>
+<span id="L1112"><span class="lineNum">    1112</span> <span class="tlaUNC">           0 :     vm.stopBroadcast();</span></span>
+<span id="L1113"><span class="lineNum">    1113</span>              :   }</span>
+<span id="L1114"><span class="lineNum">    1114</span>              : </span>
+<span id="L1115"><span class="lineNum">    1115</span> <span class="tlaUNC">           0 :   function _validateSeed(</span></span>
+<span id="L1116"><span class="lineNum">    1116</span>              :     Contracts memory contracts,</span>
+<span id="L1117"><span class="lineNum">    1117</span>              :     Participants memory participants,</span>
+<span id="L1118"><span class="lineNum">    1118</span>              :     VaultSeeds memory vaultSeeds,</span>
+<span id="L1119"><span class="lineNum">    1119</span>              :     ProposalSeeds memory proposalSeeds,</span>
+<span id="L1120"><span class="lineNum">    1120</span>              :     address secondaryToken,</span>
+<span id="L1121"><span class="lineNum">    1121</span>              :     address usdcToken</span>
+<span id="L1122"><span class="lineNum">    1122</span>              :   ) internal view {</span>
+<span id="L1123"><span class="lineNum">    1123</span>              :     // These checks are the seed's contract-level acceptance tests.</span>
+<span id="L1124"><span class="lineNum">    1124</span> <span class="tlaUNC">           0 :     ProtocolCore core = ProtocolCore(contracts.protocolCore);</span></span>
+<span id="L1125"><span class="lineNum">    1125</span> <span class="tlaUNC">           0 :     GuardianAdministrator guardianAdministrator = GuardianAdministrator(contracts.guardianAdministrator);</span></span>
+<span id="L1126"><span class="lineNum">    1126</span> <span class="tlaUNC">           0 :     VaultRegistry registry = VaultRegistry(contracts.vaultRegistry);</span></span>
+<span id="L1127"><span class="lineNum">    1127</span> <span class="tlaUNC">           0 :     DaoGovernor governor = DaoGovernor(payable(contracts.daoGovernor));</span></span>
+<span id="L1128"><span class="lineNum">    1128</span>              : </span>
+<span id="L1129"><span class="lineNum">    1129</span> <span class="tlaUNC">           0 :     require(core.hasGenesisToken(contracts.primaryToken), &quot;Primary token not registered as genesis token&quot;);</span></span>
+<span id="L1130"><span class="lineNum">    1130</span> <span class="tlaUNC">           0 :     require(core.hasGenesisToken(secondaryToken), &quot;Secondary token not registered as genesis token&quot;);</span></span>
+<span id="L1131"><span class="lineNum">    1131</span> <span class="tlaUNC">           0 :     require(core.hasGenesisToken(usdcToken), &quot;USDC token not registered as genesis token&quot;);</span></span>
+<span id="L1132"><span class="lineNum">    1132</span> <span class="tlaUNC">           0 :     require(core.isVaultAssetSupported(contracts.primaryToken), &quot;Primary token not supported as vault asset&quot;);</span></span>
+<span id="L1133"><span class="lineNum">    1133</span> <span class="tlaUNC">           0 :     require(core.isVaultAssetSupported(secondaryToken), &quot;Secondary token not supported as vault asset&quot;);</span></span>
+<span id="L1134"><span class="lineNum">    1134</span>              : </span>
+<span id="L1135"><span class="lineNum">    1135</span> <span class="tlaUNC">           0 :     require(guardianAdministrator.isActiveGuardian(participants.guardian1.addr), &quot;Guardian1 not active&quot;);</span></span>
+<span id="L1136"><span class="lineNum">    1136</span> <span class="tlaUNC">           0 :     require(guardianAdministrator.isActiveGuardian(participants.guardian2.addr), &quot;Guardian2 not active&quot;);</span></span>
+<span id="L1137"><span class="lineNum">    1137</span> <span class="tlaUNC">           0 :     require(guardianAdministrator.isActiveGuardian(participants.adminGuardian.addr), &quot;Admin guardian not active&quot;);</span></span>
+<span id="L1138"><span class="lineNum">    1138</span>              : </span>
+<span id="L1139"><span class="lineNum">    1139</span> <span class="tlaUNC">           0 :     require(registry.getVaultsByGuardian(participants.guardian1.addr).length == 2, &quot;Guardian1 vault count mismatch&quot;);</span></span>
+<span id="L1140"><span class="lineNum">    1140</span> <span class="tlaUNC">           0 :     require(registry.getVaultsByGuardian(participants.guardian2.addr).length == 1, &quot;Guardian2 vault count mismatch&quot;);</span></span>
+<span id="L1141"><span class="lineNum">    1141</span> <span class="tlaUNC">           0 :     require(</span></span>
+<span id="L1142"><span class="lineNum">    1142</span>              :       registry.getVaultsByGuardian(participants.adminGuardian.addr).length == 0,</span>
+<span id="L1143"><span class="lineNum">    1143</span>              :       &quot;Admin guardian should not have vaults&quot;</span>
+<span id="L1144"><span class="lineNum">    1144</span>              :     );</span>
+<span id="L1145"><span class="lineNum">    1145</span>              : </span>
+<span id="L1146"><span class="lineNum">    1146</span> <span class="tlaUNC">           0 :     require(registry.isActiveVault(vaultSeeds.guardian1PrimaryVault), &quot;Guardian1 primary vault inactive&quot;);</span></span>
+<span id="L1147"><span class="lineNum">    1147</span> <span class="tlaUNC">           0 :     require(registry.isActiveVault(vaultSeeds.guardian2PrimaryVault), &quot;Guardian2 primary vault inactive&quot;);</span></span>
+<span id="L1148"><span class="lineNum">    1148</span> <span class="tlaUNC">           0 :     require(registry.isActiveVault(vaultSeeds.guardian1SecondaryVault), &quot;Guardian1 secondary vault inactive&quot;);</span></span>
+<span id="L1149"><span class="lineNum">    1149</span>              : </span>
+<span id="L1150"><span class="lineNum">    1150</span> <span class="tlaUNC">           0 :     require(</span></span>
+<span id="L1151"><span class="lineNum">    1151</span>              :       GovernanceToken(contracts.governanceToken).balanceOf(participants.investor2.addr)</span>
+<span id="L1152"><span class="lineNum">    1152</span>              :         &gt;= INVESTOR2_SECONDARY_GVT_BUY * 100,</span>
+<span id="L1153"><span class="lineNum">    1153</span>              :       &quot;Secondary token governance purchase missing&quot;</span>
+<span id="L1154"><span class="lineNum">    1154</span>              :     );</span>
+<span id="L1155"><span class="lineNum">    1155</span>              : </span>
+<span id="L1156"><span class="lineNum">    1156</span> <span class="tlaUNC">           0 :     require(</span></span>
+<span id="L1157"><span class="lineNum">    1157</span>              :       governor.state(proposalSeeds.pending) == IGovernor.ProposalState.Pending, &quot;Pending proposal state mismatch&quot;</span>
+<span id="L1158"><span class="lineNum">    1158</span>              :     );</span>
+<span id="L1159"><span class="lineNum">    1159</span> <span class="tlaUNC">           0 :     require(</span></span>
+<span id="L1160"><span class="lineNum">    1160</span>              :       governor.state(proposalSeeds.active) == IGovernor.ProposalState.Active, &quot;Active proposal state mismatch&quot;</span>
+<span id="L1161"><span class="lineNum">    1161</span>              :     );</span>
+<span id="L1162"><span class="lineNum">    1162</span> <span class="tlaUNC">           0 :     require(</span></span>
+<span id="L1163"><span class="lineNum">    1163</span>              :       governor.state(proposalSeeds.canceled) == IGovernor.ProposalState.Canceled,</span>
+<span id="L1164"><span class="lineNum">    1164</span>              :       &quot;Canceled proposal state mismatch&quot;</span>
+<span id="L1165"><span class="lineNum">    1165</span>              :     );</span>
+<span id="L1166"><span class="lineNum">    1166</span> <span class="tlaUNC">           0 :     require(</span></span>
+<span id="L1167"><span class="lineNum">    1167</span>              :       governor.state(proposalSeeds.defeated) == IGovernor.ProposalState.Defeated,</span>
+<span id="L1168"><span class="lineNum">    1168</span>              :       &quot;Defeated proposal state mismatch&quot;</span>
+<span id="L1169"><span class="lineNum">    1169</span>              :     );</span>
+<span id="L1170"><span class="lineNum">    1170</span> <span class="tlaUNC">           0 :     require(</span></span>
+<span id="L1171"><span class="lineNum">    1171</span>              :       governor.state(proposalSeeds.succeeded) == IGovernor.ProposalState.Succeeded,</span>
+<span id="L1172"><span class="lineNum">    1172</span>              :       &quot;Succeeded proposal state mismatch&quot;</span>
+<span id="L1173"><span class="lineNum">    1173</span>              :     );</span>
+<span id="L1174"><span class="lineNum">    1174</span> <span class="tlaUNC">           0 :     require(</span></span>
+<span id="L1175"><span class="lineNum">    1175</span>              :       governor.state(proposalSeeds.queued) == IGovernor.ProposalState.Queued, &quot;Queued proposal state mismatch&quot;</span>
+<span id="L1176"><span class="lineNum">    1176</span>              :     );</span>
+<span id="L1177"><span class="lineNum">    1177</span> <span class="tlaUNC">           0 :     require(</span></span>
+<span id="L1178"><span class="lineNum">    1178</span>              :       governor.state(proposalSeeds.executed) == IGovernor.ProposalState.Executed,</span>
+<span id="L1179"><span class="lineNum">    1179</span>              :       &quot;Executed proposal state mismatch&quot;</span>
+<span id="L1180"><span class="lineNum">    1180</span>              :     );</span>
+<span id="L1181"><span class="lineNum">    1181</span>              : </span>
+<span id="L1182"><span class="lineNum">    1182</span> <span class="tlaUNC">           0 :     require(</span></span>
+<span id="L1183"><span class="lineNum">    1183</span>              :       proposalSeeds.governorProposalCountAfterDemo == proposalSeeds.governorProposalCountBeforeDemo + 7,</span>
+<span id="L1184"><span class="lineNum">    1184</span>              :       &quot;Governor demo proposal count mismatch&quot;</span>
+<span id="L1185"><span class="lineNum">    1185</span>              :     );</span>
+<span id="L1186"><span class="lineNum">    1186</span>              :   }</span>
+<span id="L1187"><span class="lineNum">    1187</span>              : </span>
+<span id="L1188"><span class="lineNum">    1188</span>              :   // Human-readable terminal output for developers after the seed completes.</span>
+<span id="L1189"><span class="lineNum">    1189</span> <span class="tlaUNC">           0 :   function _logSeed(</span></span>
+<span id="L1190"><span class="lineNum">    1190</span>              :     Contracts memory contracts,</span>
+<span id="L1191"><span class="lineNum">    1191</span>              :     Participants memory participants,</span>
+<span id="L1192"><span class="lineNum">    1192</span>              :     VaultSeeds memory vaultSeeds,</span>
+<span id="L1193"><span class="lineNum">    1193</span>              :     ProposalSeeds memory proposalSeeds,</span>
+<span id="L1194"><span class="lineNum">    1194</span>              :     address secondaryToken,</span>
+<span id="L1195"><span class="lineNum">    1195</span>              :     address usdcToken</span>
+<span id="L1196"><span class="lineNum">    1196</span>              :   ) internal view {</span>
+<span id="L1197"><span class="lineNum">    1197</span> <span class="tlaUNC">           0 :     DaoGovernor governor = DaoGovernor(payable(contracts.daoGovernor));</span></span>
+<span id="L1198"><span class="lineNum">    1198</span>              : </span>
+<span id="L1199"><span class="lineNum">    1199</span> <span class="tlaUNC">           0 :     console.log(&quot;========================================&quot;);</span></span>
+<span id="L1200"><span class="lineNum">    1200</span> <span class="tlaUNC">           0 :     console.log(&quot;Local Seed Complete&quot;);</span></span>
+<span id="L1201"><span class="lineNum">    1201</span> <span class="tlaUNC">           0 :     console.log(&quot;========================================&quot;);</span></span>
+<span id="L1202"><span class="lineNum">    1202</span> <span class="tlaUNC">           0 :     console.log(&quot;Primary Genesis Token:&quot;, contracts.primaryToken);</span></span>
+<span id="L1203"><span class="lineNum">    1203</span> <span class="tlaUNC">           0 :     console.log(&quot;Secondary Genesis Token:&quot;, secondaryToken);</span></span>
+<span id="L1204"><span class="lineNum">    1204</span> <span class="tlaUNC">           0 :     console.log(&quot;USDC Token:&quot;, usdcToken);</span></span>
+<span id="L1205"><span class="lineNum">    1205</span> <span class="tlaUNC">           0 :     console.log(&quot;Guardian1:&quot;, participants.guardian1.addr);</span></span>
+<span id="L1206"><span class="lineNum">    1206</span> <span class="tlaUNC">           0 :     console.log(&quot;Guardian2:&quot;, participants.guardian2.addr);</span></span>
+<span id="L1207"><span class="lineNum">    1207</span> <span class="tlaUNC">           0 :     console.log(&quot;Admin Guardian:&quot;, participants.adminGuardian.addr);</span></span>
+<span id="L1208"><span class="lineNum">    1208</span> <span class="tlaUNC">           0 :     console.log(&quot;Guardian1 Primary Vault:&quot;, vaultSeeds.guardian1PrimaryVault);</span></span>
+<span id="L1209"><span class="lineNum">    1209</span> <span class="tlaUNC">           0 :     console.log(&quot;Guardian2 Primary Vault:&quot;, vaultSeeds.guardian2PrimaryVault);</span></span>
+<span id="L1210"><span class="lineNum">    1210</span> <span class="tlaUNC">           0 :     console.log(&quot;Guardian1 Secondary Vault:&quot;, vaultSeeds.guardian1SecondaryVault);</span></span>
+<span id="L1211"><span class="lineNum">    1211</span> <span class="tlaUNC">           0 :     console.log(&quot;Guardian1 Application Proposal:&quot;, proposalSeeds.guardian1Application);</span></span>
+<span id="L1212"><span class="lineNum">    1212</span> <span class="tlaUNC">           0 :     console.log(&quot;Guardian2 Application Proposal:&quot;, proposalSeeds.guardian2Application);</span></span>
+<span id="L1213"><span class="lineNum">    1213</span> <span class="tlaUNC">           0 :     console.log(&quot;Admin Guardian Application Proposal:&quot;, proposalSeeds.adminGuardianApplication);</span></span>
+<span id="L1214"><span class="lineNum">    1214</span> <span class="tlaUNC">           0 :     console.log(&quot;Pending Proposal:&quot;, proposalSeeds.pending);</span></span>
+<span id="L1215"><span class="lineNum">    1215</span> <span class="tlaUNC">           0 :     console.log(&quot;Active Proposal:&quot;, proposalSeeds.active);</span></span>
+<span id="L1216"><span class="lineNum">    1216</span> <span class="tlaUNC">           0 :     console.log(&quot;Canceled Proposal:&quot;, proposalSeeds.canceled);</span></span>
+<span id="L1217"><span class="lineNum">    1217</span> <span class="tlaUNC">           0 :     console.log(&quot;Defeated Proposal:&quot;, proposalSeeds.defeated);</span></span>
+<span id="L1218"><span class="lineNum">    1218</span> <span class="tlaUNC">           0 :     console.log(&quot;Succeeded Proposal:&quot;, proposalSeeds.succeeded);</span></span>
+<span id="L1219"><span class="lineNum">    1219</span> <span class="tlaUNC">           0 :     console.log(&quot;Queued Proposal:&quot;, proposalSeeds.queued);</span></span>
+<span id="L1220"><span class="lineNum">    1220</span> <span class="tlaUNC">           0 :     console.log(&quot;Executed Proposal:&quot;, proposalSeeds.executed);</span></span>
+<span id="L1221"><span class="lineNum">    1221</span> <span class="tlaUNC">           0 :     console.log(&quot;Governor Proposal Count Before Demo:&quot;, proposalSeeds.governorProposalCountBeforeDemo);</span></span>
+<span id="L1222"><span class="lineNum">    1222</span> <span class="tlaUNC">           0 :     console.log(&quot;Governor Proposal Count After Demo:&quot;, proposalSeeds.governorProposalCountAfterDemo);</span></span>
+<span id="L1223"><span class="lineNum">    1223</span> <span class="tlaUNC">           0 :     console.log(&quot;Pending Proposal State:&quot;, uint256(uint8(governor.state(proposalSeeds.pending))));</span></span>
+<span id="L1224"><span class="lineNum">    1224</span> <span class="tlaUNC">           0 :     console.log(&quot;Active Proposal State:&quot;, uint256(uint8(governor.state(proposalSeeds.active))));</span></span>
+<span id="L1225"><span class="lineNum">    1225</span> <span class="tlaUNC">           0 :     console.log(&quot;Canceled Proposal State:&quot;, uint256(uint8(governor.state(proposalSeeds.canceled))));</span></span>
+<span id="L1226"><span class="lineNum">    1226</span> <span class="tlaUNC">           0 :     console.log(&quot;Defeated Proposal State:&quot;, uint256(uint8(governor.state(proposalSeeds.defeated))));</span></span>
+<span id="L1227"><span class="lineNum">    1227</span> <span class="tlaUNC">           0 :     console.log(&quot;Succeeded Proposal State:&quot;, uint256(uint8(governor.state(proposalSeeds.succeeded))));</span></span>
+<span id="L1228"><span class="lineNum">    1228</span> <span class="tlaUNC">           0 :     console.log(&quot;Queued Proposal State:&quot;, uint256(uint8(governor.state(proposalSeeds.queued))));</span></span>
+<span id="L1229"><span class="lineNum">    1229</span> <span class="tlaUNC">           0 :     console.log(&quot;Executed Proposal State:&quot;, uint256(uint8(governor.state(proposalSeeds.executed))));</span></span>
+<span id="L1230"><span class="lineNum">    1230</span>              :   }</span>
+<span id="L1231"><span class="lineNum">    1231</span>              : </span>
+<span id="L1232"><span class="lineNum">    1232</span>              :   // Persist a local JSON snapshot with the most frontend-relevant seeded values.</span>
+<span id="L1233"><span class="lineNum">    1233</span>              :   // This file is intentionally emitted only for Anvil because equivalent actions on</span>
+<span id="L1234"><span class="lineNum">    1234</span>              :   // live networks should be governed/manual, not automatic.</span>
+<span id="L1235"><span class="lineNum">    1235</span> <span class="tlaUNC">           0 :   function _writeSeedJson(</span></span>
+<span id="L1236"><span class="lineNum">    1236</span>              :     Contracts memory contracts,</span>
+<span id="L1237"><span class="lineNum">    1237</span>              :     Participants memory participants,</span>
+<span id="L1238"><span class="lineNum">    1238</span>              :     ProposalSeeds memory proposalSeeds,</span>
+<span id="L1239"><span class="lineNum">    1239</span>              :     address secondaryToken,</span>
+<span id="L1240"><span class="lineNum">    1240</span>              :     address usdcToken</span>
+<span id="L1241"><span class="lineNum">    1241</span>              :   ) internal {</span>
+<span id="L1242"><span class="lineNum">    1242</span>              :     // The persisted JSON is intentionally local-only; on real networks those admin actions should be manual/governed.</span>
+<span id="L1243"><span class="lineNum">    1243</span> <span class="tlaUNC">           0 :     if (block.chainid != 31337) {</span></span>
+<span id="L1244"><span class="lineNum">    1244</span> <span class="tlaUNC">           0 :       return;</span></span>
+<span id="L1245"><span class="lineNum">    1245</span>              :     }</span>
+<span id="L1246"><span class="lineNum">    1246</span>              : </span>
+<span id="L1247"><span class="lineNum">    1247</span> <span class="tlaUNC">           0 :     address[] memory supportedGenesisTokens = ProtocolCore(contracts.protocolCore).getSupportedGenesisTokens();</span></span>
+<span id="L1248"><span class="lineNum">    1248</span> <span class="tlaUNC">           0 :     address[] memory supportedVaultAssets = new address[](2);</span></span>
+<span id="L1249"><span class="lineNum">    1249</span> <span class="tlaUNC">           0 :     supportedVaultAssets[0] = contracts.primaryToken;</span></span>
+<span id="L1250"><span class="lineNum">    1250</span> <span class="tlaUNC">           0 :     supportedVaultAssets[1] = secondaryToken;</span></span>
+<span id="L1251"><span class="lineNum">    1251</span>              : </span>
+<span id="L1252"><span class="lineNum">    1252</span> <span class="tlaUNC">           0 :     address[] memory guardian1Vaults =</span></span>
+<span id="L1253"><span class="lineNum">    1253</span> <span class="tlaUNC">           0 :       VaultRegistry(contracts.vaultRegistry).getVaultsByGuardian(participants.guardian1.addr);</span></span>
+<span id="L1254"><span class="lineNum">    1254</span> <span class="tlaUNC">           0 :     address[] memory guardian2Vaults =</span></span>
+<span id="L1255"><span class="lineNum">    1255</span> <span class="tlaUNC">           0 :       VaultRegistry(contracts.vaultRegistry).getVaultsByGuardian(participants.guardian2.addr);</span></span>
+<span id="L1256"><span class="lineNum">    1256</span> <span class="tlaUNC">           0 :     address[] memory adminGuardianVaults =</span></span>
+<span id="L1257"><span class="lineNum">    1257</span> <span class="tlaUNC">           0 :       VaultRegistry(contracts.vaultRegistry).getVaultsByGuardian(participants.adminGuardian.addr);</span></span>
+<span id="L1258"><span class="lineNum">    1258</span>              : </span>
+<span id="L1259"><span class="lineNum">    1259</span> <span class="tlaUNC">           0 :     string memory guardiansJson = _guardiansJson(participants);</span></span>
+<span id="L1260"><span class="lineNum">    1260</span> <span class="tlaUNC">           0 :     string memory vaultsByGuardianJson =</span></span>
+<span id="L1261"><span class="lineNum">    1261</span> <span class="tlaUNC">           0 :       _vaultsByGuardianJson(guardian1Vaults, guardian2Vaults, adminGuardianVaults);</span></span>
+<span id="L1262"><span class="lineNum">    1262</span> <span class="tlaUNC">           0 :     string memory proposalIdsByStateJson = _proposalIdsByStateJson(proposalSeeds);</span></span>
+<span id="L1263"><span class="lineNum">    1263</span> <span class="tlaUNC">           0 :     string memory guardianApplicationProposalIdsJson = _guardianApplicationProposalIdsJson(proposalSeeds);</span></span>
+<span id="L1264"><span class="lineNum">    1264</span>              : </span>
+<span id="L1265"><span class="lineNum">    1265</span> <span class="tlaUNC">           0 :     string memory json = string(</span></span>
+<span id="L1266"><span class="lineNum">    1266</span>              :       abi.encodePacked(</span>
+<span id="L1267"><span class="lineNum">    1267</span>              :         &quot;{&quot;,</span>
+<span id="L1268"><span class="lineNum">    1268</span>              :         '&quot;chainId&quot;:&quot;',</span>
+<span id="L1269"><span class="lineNum">    1269</span>              :         vm.toString(block.chainid),</span>
+<span id="L1270"><span class="lineNum">    1270</span>              :         '&quot;,',</span>
+<span id="L1271"><span class="lineNum">    1271</span>              :         '&quot;primaryGenesisToken&quot;:&quot;',</span>
+<span id="L1272"><span class="lineNum">    1272</span>              :         vm.toString(contracts.primaryToken),</span>
+<span id="L1273"><span class="lineNum">    1273</span>              :         '&quot;,',</span>
+<span id="L1274"><span class="lineNum">    1274</span>              :         '&quot;secondaryGenesisToken&quot;:&quot;',</span>
+<span id="L1275"><span class="lineNum">    1275</span>              :         vm.toString(secondaryToken),</span>
+<span id="L1276"><span class="lineNum">    1276</span>              :         '&quot;,',</span>
+<span id="L1277"><span class="lineNum">    1277</span>              :         '&quot;usdcToken&quot;:&quot;',</span>
+<span id="L1278"><span class="lineNum">    1278</span>              :         vm.toString(usdcToken),</span>
+<span id="L1279"><span class="lineNum">    1279</span>              :         '&quot;,',</span>
+<span id="L1280"><span class="lineNum">    1280</span>              :         '&quot;supportedGenesisTokens&quot;:',</span>
+<span id="L1281"><span class="lineNum">    1281</span>              :         _addressArrayToJson(supportedGenesisTokens),</span>
+<span id="L1282"><span class="lineNum">    1282</span>              :         &quot;,&quot;,</span>
+<span id="L1283"><span class="lineNum">    1283</span>              :         '&quot;supportedVaultAssets&quot;:',</span>
+<span id="L1284"><span class="lineNum">    1284</span>              :         _addressArrayToJson(supportedVaultAssets),</span>
+<span id="L1285"><span class="lineNum">    1285</span>              :         &quot;,&quot;,</span>
+<span id="L1286"><span class="lineNum">    1286</span>              :         '&quot;guardians&quot;:',</span>
+<span id="L1287"><span class="lineNum">    1287</span>              :         guardiansJson,</span>
+<span id="L1288"><span class="lineNum">    1288</span>              :         &quot;,&quot;,</span>
+<span id="L1289"><span class="lineNum">    1289</span>              :         '&quot;vaultsByGuardian&quot;:',</span>
+<span id="L1290"><span class="lineNum">    1290</span>              :         vaultsByGuardianJson,</span>
+<span id="L1291"><span class="lineNum">    1291</span>              :         &quot;,&quot;,</span>
+<span id="L1292"><span class="lineNum">    1292</span>              :         '&quot;proposalIdsByState&quot;:',</span>
+<span id="L1293"><span class="lineNum">    1293</span>              :         proposalIdsByStateJson,</span>
+<span id="L1294"><span class="lineNum">    1294</span>              :         &quot;,&quot;,</span>
+<span id="L1295"><span class="lineNum">    1295</span>              :         '&quot;guardianApplicationProposalIds&quot;:',</span>
+<span id="L1296"><span class="lineNum">    1296</span>              :         guardianApplicationProposalIdsJson,</span>
+<span id="L1297"><span class="lineNum">    1297</span>              :         &quot;}&quot;</span>
+<span id="L1298"><span class="lineNum">    1298</span>              :       )</span>
+<span id="L1299"><span class="lineNum">    1299</span>              :     );</span>
+<span id="L1300"><span class="lineNum">    1300</span>              : </span>
+<span id="L1301"><span class="lineNum">    1301</span> <span class="tlaUNC">           0 :     vm.writeJson(json, &quot;deployments/anvil-seed.json&quot;);</span></span>
+<span id="L1302"><span class="lineNum">    1302</span>              :   }</span>
+<span id="L1303"><span class="lineNum">    1303</span>              : </span>
+<span id="L1304"><span class="lineNum">    1304</span>              :   // JSON fragment helpers kept separate to avoid a very large stack frame when composing</span>
+<span id="L1305"><span class="lineNum">    1305</span>              :   // the final persisted file.</span>
+<span id="L1306"><span class="lineNum">    1306</span> <span class="tlaUNC">           0 :   function _guardiansJson(Participants memory participants) internal pure returns (string memory json) {</span></span>
+<span id="L1307"><span class="lineNum">    1307</span> <span class="tlaUNC">           0 :     json = string(</span></span>
+<span id="L1308"><span class="lineNum">    1308</span>              :       abi.encodePacked(</span>
+<span id="L1309"><span class="lineNum">    1309</span>              :         &quot;{&quot;,</span>
+<span id="L1310"><span class="lineNum">    1310</span>              :         '&quot;guardian1&quot;:&quot;',</span>
+<span id="L1311"><span class="lineNum">    1311</span>              :         vm.toString(participants.guardian1.addr),</span>
+<span id="L1312"><span class="lineNum">    1312</span>              :         '&quot;,',</span>
+<span id="L1313"><span class="lineNum">    1313</span>              :         '&quot;guardian2&quot;:&quot;',</span>
+<span id="L1314"><span class="lineNum">    1314</span>              :         vm.toString(participants.guardian2.addr),</span>
+<span id="L1315"><span class="lineNum">    1315</span>              :         '&quot;,',</span>
+<span id="L1316"><span class="lineNum">    1316</span>              :         '&quot;adminGuardian&quot;:&quot;',</span>
+<span id="L1317"><span class="lineNum">    1317</span>              :         vm.toString(participants.adminGuardian.addr),</span>
+<span id="L1318"><span class="lineNum">    1318</span>              :         '&quot;',</span>
+<span id="L1319"><span class="lineNum">    1319</span>              :         &quot;}&quot;</span>
+<span id="L1320"><span class="lineNum">    1320</span>              :       )</span>
+<span id="L1321"><span class="lineNum">    1321</span>              :     );</span>
+<span id="L1322"><span class="lineNum">    1322</span>              :   }</span>
+<span id="L1323"><span class="lineNum">    1323</span>              : </span>
+<span id="L1324"><span class="lineNum">    1324</span> <span class="tlaUNC">           0 :   function _vaultsByGuardianJson(</span></span>
+<span id="L1325"><span class="lineNum">    1325</span>              :     address[] memory guardian1Vaults,</span>
+<span id="L1326"><span class="lineNum">    1326</span>              :     address[] memory guardian2Vaults,</span>
+<span id="L1327"><span class="lineNum">    1327</span>              :     address[] memory adminGuardianVaults</span>
+<span id="L1328"><span class="lineNum">    1328</span>              :   ) internal pure returns (string memory json) {</span>
+<span id="L1329"><span class="lineNum">    1329</span> <span class="tlaUNC">           0 :     json = string(</span></span>
+<span id="L1330"><span class="lineNum">    1330</span>              :       abi.encodePacked(</span>
+<span id="L1331"><span class="lineNum">    1331</span>              :         &quot;{&quot;,</span>
+<span id="L1332"><span class="lineNum">    1332</span>              :         '&quot;guardian1&quot;:',</span>
+<span id="L1333"><span class="lineNum">    1333</span>              :         _addressArrayToJson(guardian1Vaults),</span>
+<span id="L1334"><span class="lineNum">    1334</span>              :         &quot;,&quot;,</span>
+<span id="L1335"><span class="lineNum">    1335</span>              :         '&quot;guardian2&quot;:',</span>
+<span id="L1336"><span class="lineNum">    1336</span>              :         _addressArrayToJson(guardian2Vaults),</span>
+<span id="L1337"><span class="lineNum">    1337</span>              :         &quot;,&quot;,</span>
+<span id="L1338"><span class="lineNum">    1338</span>              :         '&quot;adminGuardian&quot;:',</span>
+<span id="L1339"><span class="lineNum">    1339</span>              :         _addressArrayToJson(adminGuardianVaults),</span>
+<span id="L1340"><span class="lineNum">    1340</span>              :         &quot;}&quot;</span>
+<span id="L1341"><span class="lineNum">    1341</span>              :       )</span>
+<span id="L1342"><span class="lineNum">    1342</span>              :     );</span>
+<span id="L1343"><span class="lineNum">    1343</span>              :   }</span>
+<span id="L1344"><span class="lineNum">    1344</span>              : </span>
+<span id="L1345"><span class="lineNum">    1345</span>              :   // Proposal ids are serialized as strings to avoid frontend issues with large uint256 values.</span>
+<span id="L1346"><span class="lineNum">    1346</span> <span class="tlaUNC">           0 :   function _proposalIdsByStateJson(ProposalSeeds memory proposalSeeds) internal pure returns (string memory json) {</span></span>
+<span id="L1347"><span class="lineNum">    1347</span> <span class="tlaUNC">           0 :     json = string(</span></span>
+<span id="L1348"><span class="lineNum">    1348</span>              :       abi.encodePacked(</span>
+<span id="L1349"><span class="lineNum">    1349</span>              :         &quot;{&quot;,</span>
+<span id="L1350"><span class="lineNum">    1350</span>              :         '&quot;pending&quot;:&quot;',</span>
+<span id="L1351"><span class="lineNum">    1351</span>              :         vm.toString(proposalSeeds.pending),</span>
+<span id="L1352"><span class="lineNum">    1352</span>              :         '&quot;,',</span>
+<span id="L1353"><span class="lineNum">    1353</span>              :         '&quot;active&quot;:&quot;',</span>
+<span id="L1354"><span class="lineNum">    1354</span>              :         vm.toString(proposalSeeds.active),</span>
+<span id="L1355"><span class="lineNum">    1355</span>              :         '&quot;,',</span>
+<span id="L1356"><span class="lineNum">    1356</span>              :         '&quot;canceled&quot;:&quot;',</span>
+<span id="L1357"><span class="lineNum">    1357</span>              :         vm.toString(proposalSeeds.canceled),</span>
+<span id="L1358"><span class="lineNum">    1358</span>              :         '&quot;,',</span>
+<span id="L1359"><span class="lineNum">    1359</span>              :         '&quot;defeated&quot;:&quot;',</span>
+<span id="L1360"><span class="lineNum">    1360</span>              :         vm.toString(proposalSeeds.defeated),</span>
+<span id="L1361"><span class="lineNum">    1361</span>              :         '&quot;,',</span>
+<span id="L1362"><span class="lineNum">    1362</span>              :         '&quot;succeeded&quot;:&quot;',</span>
+<span id="L1363"><span class="lineNum">    1363</span>              :         vm.toString(proposalSeeds.succeeded),</span>
+<span id="L1364"><span class="lineNum">    1364</span>              :         '&quot;,',</span>
+<span id="L1365"><span class="lineNum">    1365</span>              :         '&quot;queued&quot;:&quot;',</span>
+<span id="L1366"><span class="lineNum">    1366</span>              :         vm.toString(proposalSeeds.queued),</span>
+<span id="L1367"><span class="lineNum">    1367</span>              :         '&quot;,',</span>
+<span id="L1368"><span class="lineNum">    1368</span>              :         '&quot;executed&quot;:&quot;',</span>
+<span id="L1369"><span class="lineNum">    1369</span>              :         vm.toString(proposalSeeds.executed),</span>
+<span id="L1370"><span class="lineNum">    1370</span>              :         '&quot;',</span>
+<span id="L1371"><span class="lineNum">    1371</span>              :         &quot;}&quot;</span>
+<span id="L1372"><span class="lineNum">    1372</span>              :       )</span>
+<span id="L1373"><span class="lineNum">    1373</span>              :     );</span>
+<span id="L1374"><span class="lineNum">    1374</span>              :   }</span>
+<span id="L1375"><span class="lineNum">    1375</span>              : </span>
+<span id="L1376"><span class="lineNum">    1376</span> <span class="tlaUNC">           0 :   function _guardianApplicationProposalIdsJson(ProposalSeeds memory proposalSeeds)</span></span>
+<span id="L1377"><span class="lineNum">    1377</span>              :     internal</span>
+<span id="L1378"><span class="lineNum">    1378</span>              :     pure</span>
+<span id="L1379"><span class="lineNum">    1379</span>              :     returns (string memory json)</span>
+<span id="L1380"><span class="lineNum">    1380</span>              :   {</span>
+<span id="L1381"><span class="lineNum">    1381</span> <span class="tlaUNC">           0 :     json = string(</span></span>
+<span id="L1382"><span class="lineNum">    1382</span>              :       abi.encodePacked(</span>
+<span id="L1383"><span class="lineNum">    1383</span>              :         &quot;{&quot;,</span>
+<span id="L1384"><span class="lineNum">    1384</span>              :         '&quot;guardian1&quot;:&quot;',</span>
+<span id="L1385"><span class="lineNum">    1385</span>              :         vm.toString(proposalSeeds.guardian1Application),</span>
+<span id="L1386"><span class="lineNum">    1386</span>              :         '&quot;,',</span>
+<span id="L1387"><span class="lineNum">    1387</span>              :         '&quot;guardian2&quot;:&quot;',</span>
+<span id="L1388"><span class="lineNum">    1388</span>              :         vm.toString(proposalSeeds.guardian2Application),</span>
+<span id="L1389"><span class="lineNum">    1389</span>              :         '&quot;,',</span>
+<span id="L1390"><span class="lineNum">    1390</span>              :         '&quot;adminGuardian&quot;:&quot;',</span>
+<span id="L1391"><span class="lineNum">    1391</span>              :         vm.toString(proposalSeeds.adminGuardianApplication),</span>
+<span id="L1392"><span class="lineNum">    1392</span>              :         '&quot;',</span>
+<span id="L1393"><span class="lineNum">    1393</span>              :         &quot;}&quot;</span>
+<span id="L1394"><span class="lineNum">    1394</span>              :       )</span>
+<span id="L1395"><span class="lineNum">    1395</span>              :     );</span>
+<span id="L1396"><span class="lineNum">    1396</span>              :   }</span>
+<span id="L1397"><span class="lineNum">    1397</span>              : </span>
+<span id="L1398"><span class="lineNum">    1398</span>              :   // Lightweight address array serializer used by the local seed snapshot.</span>
+<span id="L1399"><span class="lineNum">    1399</span> <span class="tlaUNC">           0 :   function _addressArrayToJson(address[] memory values) internal pure returns (string memory json) {</span></span>
+<span id="L1400"><span class="lineNum">    1400</span> <span class="tlaUNC">           0 :     json = &quot;[&quot;;</span></span>
+<span id="L1401"><span class="lineNum">    1401</span>              : </span>
+<span id="L1402"><span class="lineNum">    1402</span> <span class="tlaUNC">           0 :     for (uint256 i = 0; i &lt; values.length; i++) {</span></span>
+<span id="L1403"><span class="lineNum">    1403</span> <span class="tlaUNC">           0 :       if (i &gt; 0) {</span></span>
+<span id="L1404"><span class="lineNum">    1404</span> <span class="tlaUNC">           0 :         json = string(abi.encodePacked(json, &quot;,&quot;));</span></span>
+<span id="L1405"><span class="lineNum">    1405</span>              :       }</span>
+<span id="L1406"><span class="lineNum">    1406</span> <span class="tlaUNC">           0 :       json = string(abi.encodePacked(json, '&quot;', vm.toString(values[i]), '&quot;'));</span></span>
+<span id="L1407"><span class="lineNum">    1407</span>              :     }</span>
+<span id="L1408"><span class="lineNum">    1408</span>              : </span>
+<span id="L1409"><span class="lineNum">    1409</span> <span class="tlaUNC">           0 :     json = string(abi.encodePacked(json, &quot;]&quot;));</span></span>
+<span id="L1410"><span class="lineNum">    1410</span>              :   }</span>
+<span id="L1411"><span class="lineNum">    1411</span>              : }</span>
+        </pre>
+              </td>
+            </tr>
+          </table>
+          <br>
+
+          <table width="100%" border=0 cellspacing=0 cellpadding=0>
+            <tr><td class="ruler"><img src="../../../../glass.png" width=3 height=3 alt=""></td></tr>
+            <tr><td class="versionInfo">Generated by: <a href="https://github.com//linux-test-project/lcov" target="_parent">LCOV version 2.0-1</a></td></tr>
+          </table>
+          <br>
+
+</body>
+</html>

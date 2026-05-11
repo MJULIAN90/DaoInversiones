@@ -27,7 +27,7 @@ i_ethAccountAbstraction:; forge install eth-infinitism/account-abstraction --no-
 # NATIVE AA ZK
 i_zkAccountAbstraction:; forge install Cyfrin/foundry-era-contracts --no-git
 
-.PHONY: coverage
+.PHONY: coverage_test
 
 coverage:
 	forge coverage --report lcov

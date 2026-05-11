@@ -8,7 +8,7 @@ import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
 
 contract GovernanceToken is ERC20, EIP712, ERC20Votes, AccessControl {
   bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
-  bool public mintingFinished;
+  bool public isMintingFinished;
 
   event MintingFinished();
   error GovernanceToken__MintingDisabled();
@@ -18,12 +18,12 @@ contract GovernanceToken is ERC20, EIP712, ERC20Votes, AccessControl {
   }
 
   function mint(address to, uint256 amount) external onlyRole(MINTER_ROLE) {
-    if (mintingFinished) revert GovernanceToken__MintingDisabled();
+    if (isMintingFinished) revert GovernanceToken__MintingDisabled();
     _mint(to, amount);
   }
 
   function finishMinting() external onlyRole(MINTER_ROLE) {
-    mintingFinished = true;
+    isMintingFinished = true;
     emit MintingFinished();
   }
 
