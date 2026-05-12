@@ -37,7 +37,7 @@
           </tr>
           <tr>
             <td class="headerItem">Test Date:</td>
-            <td class="headerValue">2026-05-09 12:39:03</td>
+            <td class="headerValue">2026-05-11 22:36:47</td>
             <td></td>
             <td class="headerItem">Functions:</td>
             <td class="headerCovTableEntryMed">87.5&nbsp;%</td>
@@ -81,12 +81,12 @@
 <span id="L19"><span class="lineNum">      19</span> <span class="tlaGNC">          16 :     return abi.encodeWithSelector(VaultRegistry.setFactory.selector, vaultFactory);</span></span>
 <span id="L20"><span class="lineNum">      20</span>              :   }</span>
 <span id="L21"><span class="lineNum">      21</span>              : </span>
-<span id="L22"><span class="lineNum">      22</span> <span class="tlaGNC">          41 :   function _operationId(TimeLock timeLock, address target, bytes memory data, bytes32 salt)</span></span>
+<span id="L22"><span class="lineNum">      22</span> <span class="tlaGNC">          45 :   function _operationId(TimeLock timeLock, address target, bytes memory data, bytes32 salt)</span></span>
 <span id="L23"><span class="lineNum">      23</span>              :     internal</span>
 <span id="L24"><span class="lineNum">      24</span>              :     pure</span>
 <span id="L25"><span class="lineNum">      25</span>              :     returns (bytes32)</span>
 <span id="L26"><span class="lineNum">      26</span>              :   {</span>
-<span id="L27"><span class="lineNum">      27</span> <span class="tlaGNC">          41 :     return timeLock.hashOperation(target, 0, data, TIMELOCK_PREDECESSOR, salt);</span></span>
+<span id="L27"><span class="lineNum">      27</span> <span class="tlaGNC">          45 :     return timeLock.hashOperation(target, 0, data, TIMELOCK_PREDECESSOR, salt);</span></span>
 <span id="L28"><span class="lineNum">      28</span>              :   }</span>
 <span id="L29"><span class="lineNum">      29</span>              : </span>
 <span id="L30"><span class="lineNum">      30</span> <span class="tlaGNC">          32 :   function _scheduleAndMaybeExecute(</span></span>
@@ -126,14 +126,14 @@
 <span id="L64"><span class="lineNum">      64</span>              :     }</span>
 <span id="L65"><span class="lineNum">      65</span>              :   }</span>
 <span id="L66"><span class="lineNum">      66</span>              : </span>
-<span id="L67"><span class="lineNum">      67</span> <span class="tlaGNC">           5 :   function _executeReadyOperationFromCurrentSender(TimeLock timeLock, address target, bytes memory data, bytes32 salt)</span></span>
+<span id="L67"><span class="lineNum">      67</span> <span class="tlaGNC">           9 :   function _executeReadyOperationFromCurrentSender(TimeLock timeLock, address target, bytes memory data, bytes32 salt)</span></span>
 <span id="L68"><span class="lineNum">      68</span>              :     internal</span>
 <span id="L69"><span class="lineNum">      69</span>              :     returns (bytes32 operationId, bool executed)</span>
 <span id="L70"><span class="lineNum">      70</span>              :   {</span>
-<span id="L71"><span class="lineNum">      71</span> <span class="tlaGNC">           5 :     operationId = _operationId(timeLock, target, data, salt);</span></span>
+<span id="L71"><span class="lineNum">      71</span> <span class="tlaGNC">           9 :     operationId = _operationId(timeLock, target, data, salt);</span></span>
 <span id="L72"><span class="lineNum">      72</span>              : </span>
-<span id="L73"><span class="lineNum">      73</span> <span class="tlaGNC">           5 :     if (timeLock.isOperationDone(operationId)) {</span></span>
-<span id="L74"><span class="lineNum">      74</span> <span class="tlaGNC">           3 :       return (operationId, false);</span></span>
+<span id="L73"><span class="lineNum">      73</span> <span class="tlaGNC">           9 :     if (timeLock.isOperationDone(operationId)) {</span></span>
+<span id="L74"><span class="lineNum">      74</span> <span class="tlaGNC">           7 :       return (operationId, false);</span></span>
 <span id="L75"><span class="lineNum">      75</span>              :     }</span>
 <span id="L76"><span class="lineNum">      76</span>              : </span>
 <span id="L77"><span class="lineNum">      77</span> <span class="tlaGNC">           2 :     require(timeLock.isOperationReady(operationId), &quot;Timelock operation not ready&quot;);</span></span>

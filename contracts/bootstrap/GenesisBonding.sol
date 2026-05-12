@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.33;
+pragma solidity 0.8.30;
 
 // =============================================================
 //                           IMPORTS
@@ -61,7 +61,10 @@ contract GenesisBonding is AccessControl, ReentrancyGuardTransient {
   /// @notice Emitted when a buyer purchases governance tokens.
   event Purchased(address indexed buyer, uint256 paymentAmount, uint256 governanceAmount);
 
-  /// @notice Emitted when a non-protocol token is swept to treasury.
+  /// @notice Emitted when purchase tokens are updated.
+  event PurchaseTokensSet(address[] tokens);
+
+  /// @notice Emitted when tokens are swept to treasury.
   event Swept(address indexed token, uint256 amount);
 
   /*//////////////////////////////////////////////////////////////
@@ -181,6 +184,7 @@ contract GenesisBonding is AccessControl, ReentrancyGuardTransient {
   /// @param allowedGenesisTokens Token addresses to allow for purchases.
   function setPurchaseTokens(address[] memory allowedGenesisTokens) external onlyRole(DEFAULT_ADMIN_ROLE) {
     _setPurchaseTokens(allowedGenesisTokens);
+    emit PurchaseTokensSet(allowedGenesisTokens);
   }
 
   // ==========================================================
@@ -193,9 +197,9 @@ contract GenesisBonding is AccessControl, ReentrancyGuardTransient {
     uint256 length = allowedGenesisTokens.length;
 
     for (uint256 i = 0; i < length; i++) {
-      if (allowedGenesisTokens[i] == address(0)) revert CommonErrors.ZeroAddress();
-
-      purchaseTokens.add(allowedGenesisTokens[i]);
+      if (allowedGenesisTokens[i] != address(0)) {
+        purchaseTokens.add(allowedGenesisTokens[i]);
+      }
     }
   }
 }

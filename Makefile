@@ -30,7 +30,7 @@ i_zkAccountAbstraction:; forge install Cyfrin/foundry-era-contracts --no-git
 .PHONY: coverage_test
 
 coverage:
-	forge coverage --report lcov
+	forge coverage --report lcov --ir-minimum
 	genhtml lcov.info --output-directory coverage
 	xdg-open coverage/index.html
 
@@ -56,3 +56,12 @@ s_seedLocal:
 .PHONY: s_bootstrapLocal
 
 s_bootstrapLocal: s_deployLocal s_seedLocal
+
+.PHONY: test
+
+-include .env
+
+.PHONY: t_forkMainnet
+
+t_forkMainnet:
+	forge test --fork-url $(RPC_URL)

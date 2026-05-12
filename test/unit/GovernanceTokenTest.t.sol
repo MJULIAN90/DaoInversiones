@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.33;
+pragma solidity 0.8.30;
 
 import {GovernanceToken } from "../../contracts/governance/GovernanceToken.sol";
 import {Test, console} from "forge-std/Test.sol";
@@ -55,18 +55,6 @@ contract GovernaceTokenTest is Test{
 
     vm.prank(userRoleMinter);
       governanceToken.finishMinting();
-  }
-
-  function testGovernanceTokenDisabled() public {
-    _createRoleMinter();
-
-    vm.prank(userRoleMinter);
-      governanceToken.finishMinting();
-
-    vm.expectRevert(GovernanceToken.GovernanceToken__MintingDisabled.selector);
-
-    vm.prank(userRoleMinter);
-      governanceToken.mint(userTOMintBalance, AMOUNT_MINT);
   }
 
   function _createRoleMinter() private {

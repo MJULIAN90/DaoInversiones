@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.33;
+pragma solidity 0.8.30;
 
 // =============================================================
 //                           IMPORTS
@@ -143,9 +143,6 @@ contract VaultImplementation is
   /// @notice Thrown when strategy adapters/allocation arrays are malformed.
   error VaultImplementation__InvalidStrategyAllocation();
 
-  /// @notice Thrown when an adapter appears more than once in strategy set.
-  error VaultImplementation__DuplicatedAdapter();
-
   /// @notice Thrown when accumulated allocation exceeds 100%.
   error VaultImplementation__InvalidPercentage();
 
@@ -253,9 +250,9 @@ contract VaultImplementation is
   /// @dev Reverts when protocol-wide vault deposits are paused in core.
   function deposit(uint256 assets, address receiver)
     public
+    nonReentrant
     override
     whenNotPaused
-    nonReentrant
     returns (uint256 shares)
   {
     if (IProtocolCore(core).isVaultDepositsPaused()) {
@@ -269,9 +266,9 @@ contract VaultImplementation is
   /// @dev Reverts when protocol-wide vault deposits are paused in core.
   function mint(uint256 shares, address receiver)
     public
+    nonReentrant
     override
     whenNotPaused
-    nonReentrant
     returns (uint256 assets)
   {
     if (IProtocolCore(core).isVaultDepositsPaused()) {
@@ -285,9 +282,9 @@ contract VaultImplementation is
   /// @dev If idle liquidity is insufficient, divests from strategies before withdrawing and then rebalances.
   function withdraw(uint256 assets, address receiver, address owner)
     public
+    nonReentrant
     override
     whenNotPaused
-    nonReentrant
     returns (uint256 shares)
   {
     uint256 idleAssets = IERC20(asset()).balanceOf(address(this));
@@ -306,9 +303,9 @@ contract VaultImplementation is
   /// @dev If idle liquidity is insufficient, divests before redeeming and then rebalances.
   function redeem(uint256 shares, address receiver, address owner)
     public
+    nonReentrant
     override
     whenNotPaused
-    nonReentrant
     returns (uint256 assets)
   {
     uint256 idleAssets = IERC20(asset()).balanceOf(address(this));
@@ -436,7 +433,11 @@ contract VaultImplementation is
       uint256 allocationBps = newAllocationBps[i];
 
       if (adapter == address(0) || allocationBps == 0 || allocationBps > MAX_BPS) {
-        revert VaultImplementation__InvalidStrategyAllocation();
+        continue;
+      }
+
+      if (_vaultActiveAdapters.contains(adapter)) {
+        continue;
       }
 
       totalBps += allocationBps;
@@ -445,9 +446,7 @@ contract VaultImplementation is
         revert VaultImplementation__InvalidPercentage();
       }
 
-      if (!_vaultActiveAdapters.add(adapter)) {
-        revert VaultImplementation__DuplicatedAdapter();
-      }
+      _vaultActiveAdapters.add(adapter);
 
       listAdapters[adapter] =
         AdapterAllocation({allocationBps: uint16(allocationBps), status: AdapterStatus.Active});
@@ -509,8 +508,12 @@ contract VaultImplementation is
   function _clearActiveAdapters() internal {
     uint256 length = _vaultActiveAdapters.length();
 
-    for (uint256 i = length; i > 0; i--) {
-      address adapter = _vaultActiveAdapters.at(i - 1);
+    if (length == 0) return;
+
+    address[] memory adapters = _vaultActiveAdapters.values();
+
+    for (uint256 i = 0; i < length; i++) {
+      address adapter = adapters[i];
 
       listAdapters[adapter].status = AdapterStatus.Retired;
       listAdapters[adapter].allocationBps = 0;
