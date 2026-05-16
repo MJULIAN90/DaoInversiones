@@ -327,9 +327,12 @@ contract VaultImplementation is
 
     uint256 length = _vaultActiveAdapters.length();
 
-    for (uint256 i = 0; i < length; i++) {
+    for (uint256 i = 0; i < length;) {
       address adapter = _vaultActiveAdapters.at(i);
       total += IStrategyAdapter(adapter).totalAssets(address(this), asset());
+      unchecked {
+        ++i;
+      }
     }
   }
 
@@ -459,8 +462,12 @@ contract VaultImplementation is
     uint256 idleAssets = IERC20(asset()).balanceOf(address(this));
     uint256[] memory amountsToInvest = new uint256[](adaptersLength);
 
-    for (uint256 i = 0; i < adaptersLength; i++) {
+    for (uint256 i = 0; i < adaptersLength;) {
       amountsToInvest[i] = (idleAssets * newAllocationBps[i]) / MAX_BPS;
+
+      unchecked {
+        ++i;
+      }
     }
 
     IStrategyRouter(router).executeMultiple(address(this), asset(), newAdapters, amountsToInvest, action);
@@ -481,8 +488,12 @@ contract VaultImplementation is
 
     uint256[] memory amountsToInvest = new uint256[](length);
 
-    for (uint256 i = 0; i < length; i++) {
+    for (uint256 i = 0; i < length;) {
       amountsToInvest[i] = (idleAssets * allocationBps[i]) / MAX_BPS;
+
+      unchecked {
+        ++i;
+      }
     }
 
     IStrategyRouter(router).executeMultiple(address(this), asset(), adapters, amountsToInvest, INVEST_ACTION);
@@ -497,8 +508,11 @@ contract VaultImplementation is
     address[] memory adapters = _vaultActiveAdapters.values();
     uint256[] memory amountsToDivest = new uint256[](length);
 
-    for (uint256 i = 0; i < length; i++) {
+    for (uint256 i = 0; i < length;) {
       amountsToDivest[i] = IStrategyAdapter(adapters[i]).totalAssets(address(this), asset());
+      unchecked {
+        ++i;
+      }
     }
 
     IStrategyRouter(router).divestMultiple(address(this), adapters, amountsToDivest);
@@ -512,13 +526,16 @@ contract VaultImplementation is
 
     address[] memory adapters = _vaultActiveAdapters.values();
 
-    for (uint256 i = 0; i < length; i++) {
+    for (uint256 i = 0; i < length;) {
       address adapter = adapters[i];
 
       listAdapters[adapter].status = AdapterStatus.Retired;
       listAdapters[adapter].allocationBps = 0;
 
       _vaultActiveAdapters.remove(adapter);
+      unchecked {
+        ++i;
+      }
     }
   }
 
@@ -528,9 +545,12 @@ contract VaultImplementation is
     uint256 length = _vaultActiveAdapters.length();
     allocations = new uint256[](length);
 
-    for (uint256 i = 0; i < length; i++) {
+    for (uint256 i = 0; i < length;) {
       address adapter = _vaultActiveAdapters.at(i);
       allocations[i] = listAdapters[adapter].allocationBps;
+      unchecked {
+        ++i;
+      }
     }
   }
 

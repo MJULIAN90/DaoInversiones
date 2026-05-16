@@ -205,11 +205,14 @@ contract StrategyRouter is Initializable, AccessControlUpgradeable, UUPSUpgradea
       }
 
       bool isDuplicate = false;
-      for (uint256 j = 0; j < i; j++) {
+      for (uint256 j = 0; j < i;) {
         if (adapters[j] == adapter) {
           isDuplicate = true;
           break;
         }
+        unchecked {
+          ++j;
+        }    
       }
 
       if (isDuplicate) {

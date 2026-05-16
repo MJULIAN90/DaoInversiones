@@ -206,10 +206,13 @@ contract ProtocolCore is Initializable, AccessControlUpgradeable, UUPSUpgradeabl
   function _setSupportedGenesisTokens(address[] memory allowedGenesisTokens) internal {
     uint256 length = allowedGenesisTokens.length;
 
-    for (uint256 i = 0; i < length; i++) {
+    for (uint256 i = 0; i < length;) {
       if (allowedGenesisTokens[i] != address(0)) {
         _supportedGenesisTokens.add(allowedGenesisTokens[i]);
       }
+      unchecked {
+        ++i;
+      }    
     }
   }
 

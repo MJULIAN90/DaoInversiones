@@ -196,9 +196,12 @@ contract GenesisBonding is AccessControl, ReentrancyGuardTransient {
   function _setPurchaseTokens(address[] memory allowedGenesisTokens) private {
     uint256 length = allowedGenesisTokens.length;
 
-    for (uint256 i = 0; i < length; i++) {
+    for (uint256 i = 0; i < length;) {
       if (allowedGenesisTokens[i] != address(0)) {
         purchaseTokens.add(allowedGenesisTokens[i]);
+      }
+      unchecked {
+        ++i;
       }
     }
   }
